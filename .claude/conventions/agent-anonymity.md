@@ -30,7 +30,7 @@ código depois: `.claude/` é infraestrutura do agente, não parte do repositór
 desta sessão tem motivo para abrir esse caminho.
 
 Exemplos do que não pode aparecer: `// ver .claude/__workdir/<task>/...`, `// conforme
-pctk__zelo__git-instructions.skill`, nome de task ou de sessão, caminho de worktree.
+pctk__example__git-instructions.skill`, nome de task ou de sessão, caminho de worktree.
 
 ## Override deliberado dos trailers padrão do harness
 

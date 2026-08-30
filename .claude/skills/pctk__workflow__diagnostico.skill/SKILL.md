@@ -31,7 +31,7 @@ relatório final.
 
 **Escopo de repositório.** Este workspace tem 11 repositórios. Esta skill não usa nenhum mapa
 hardcoded de palavras-chave por repositório — o repositório/serviço a investigar é derivado do
-próprio insumo (path de URL, ex. `.../cem-billing-service/...`; nome de serviço citado; stack
+próprio insumo (path de URL, ex. `.../my-service/...`; nome de serviço citado; stack
 trace). Só pergunta ao humano qual repositório quando o insumo não deixa isso claro; nunca faz grep
 cego nos 11 repositórios como default.
 
@@ -68,7 +68,7 @@ Antes da primeira chamada a `safe-query` ou `safe-curl` na run — e só nessa p
 confirmar qual ambiente usar. Produção é permitida sem bloqueio, mas nunca é o default silencioso.
 
 **Exceção:** se o insumo já nomeia o ambiente explicitamente (a palavra "produção"/"prd"/
-"homologação"/"hml", ou um nome de connection profile como `cemiterio_prd`), isso já conta como
+"homologação"/"hml", ou um nome de connection profile como `example-connection-prd`), isso já conta como
 confirmação — não pergunta de novo. A confirmação só é obrigatória quando o insumo deixa o
 ambiente implícito ou ambíguo (ex.: só uma URL, sem palavra explícita — o domínio de uma URL não é
 garantia de qual ambiente/engine está por trás dela, e não deve ser tratado como confirmação).
