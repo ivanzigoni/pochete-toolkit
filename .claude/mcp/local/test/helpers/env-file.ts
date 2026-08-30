@@ -12,8 +12,9 @@ function formatEnvLine(key: string, value: string): string {
 /**
  * Writes `vars` as a temporary .env-format file, isolated from both the real .env and
  * process.env — the seam EnvConfig (src/shared/env-config.ts) is built around: point it at this
- * file via the CEM_MCP_ENV_FILE var (in-process for unit tests, in the spawned child's env for
- * e2e tests) instead of writing to the real .env or mutating process.env config values directly.
+ * file via the POCHETE_MCP_ENV_FILE var (in-process for unit tests, in the spawned child's env
+ * for e2e tests) instead of writing to the real .env or mutating process.env config values
+ * directly.
  *
  * Omitting a key from `vars` entirely means "not present in the file" (real absence, not an
  * empty override) — pass `''` explicitly for a case that needs to simulate "configured but
@@ -22,7 +23,7 @@ function formatEnvLine(key: string, value: string): string {
 export async function writeTempEnvFile(
   vars: Record<string, string>,
 ): Promise<{ path: string; cleanup: () => Promise<void> }> {
-  const dir = await mkdtemp(path.join(os.tmpdir(), 'cem-mcp-env-'));
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'pochete-mcp-env-'));
   const filePath = path.join(dir, '.env');
   const content = Object.entries(vars)
     .map(([key, value]) => formatEnvLine(key, value))

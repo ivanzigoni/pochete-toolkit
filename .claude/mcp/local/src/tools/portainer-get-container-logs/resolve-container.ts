@@ -6,8 +6,8 @@
  *
  * Matching on stackNamespace is not optional: the same Portainer endpoint can host more than one
  * stack with the identical set of service names (confirmed live on the "hml" endpoint, which also
- * runs a "zelo-cemiterio-release" stack with every cem-* service duplicated) — filtering on
- * service name alone would silently match the wrong stack's container.
+ * runs a duplicate release stack with every registered service duplicated) — filtering on service
+ * name alone would silently match the wrong stack's container.
  */
 import type { PortainerContainer } from './types.js';
 

@@ -16,7 +16,7 @@ const TOOLS_ROOT = path.join(moduleDir, '..', 'tools');
 // resolution entirely when set. Read once per instantiation like everything else here, never
 // cached; exists only so tests (unit and e2e alike) can point this class at an isolated temp
 // file instead of writing to — or depending on the absence of — a tool's real .env.
-const ENV_FILE_OVERRIDE_VAR = 'CEM_MCP_ENV_FILE';
+const ENV_FILE_OVERRIDE_VAR = 'POCHETE_MCP_ENV_FILE';
 
 function readEnvFile(envPath: string): Record<string, string> {
   try {
@@ -53,8 +53,8 @@ export class EnvConfig {
   /**
    * Raw lookup by var name. Which var name belongs to which registered profile (safe-curl's
    * cookie, bitbucket-open-pr's credential pair, a connection's password) is each tool's own
-   * registry file (auth-profiles.json, connection-profiles.json, environments.json), not
-   * something this class knows about.
+   * single JSON config file (auth-profiles.json, config.json — one per tool, see each tool's own
+   * loader), not something this class knows about.
    */
   getRaw(name: string): string | undefined {
     return this.raw[name];

@@ -37,7 +37,7 @@ async function callDelegateReasoning(
       const env: Record<string, string | undefined> = {
         ...process.env,
         NODE_OPTIONS: `--import ${pathToFileURL(REGISTER_FAKE_DRIVERS).href}`,
-        CEM_MCP_ENV_FILE: envFile,
+        POCHETE_MCP_ENV_FILE: envFile,
       };
 
       const child = spawn(process.execPath, [CALL_TOOL_MJS, 'delegate-reasoning'], { env });

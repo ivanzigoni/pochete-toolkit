@@ -3,33 +3,51 @@
  * one JSON registry per authProfile key" shape as safe-curl's auth-profiles.ts, but each profile
  * here names a pair of env vars (Atlassian account email + Bitbucket API token, Basic-auth
  * credentials) instead of a single cookie env var.
+ *
+ * Read fresh on every call, never at module load time: a missing or malformed
+ * auth-profiles.json must only ever fail this one tool's own call, inside its handler's own
+ * try/catch — never the process import chain that every other tool in this server shares. See
+ * shared/json-registry.ts.
  */
-import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { EnvConfig } from '../../shared/env-config.js';
+import { loadJsonRegistry } from '../../shared/json-registry.js';
 import type { BitbucketCredentials } from './types.js';
 
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-const REGISTRY_PATH = path.join(moduleDir, 'auth-profiles.json');
+
+// Overridable so tests (unit and e2e alike) can point this at a temp fixture instead of the real,
+// gitignored auth-profiles.json — mirrors EnvConfig's own POCHETE_MCP_ENV_FILE override for .env.
+// Resolved fresh inside loadAuthProfiles(), never cached at module load time, so a test that sets
+// this var after the module has already been imported (the in-process unit-test case) still takes
+// effect on its next call.
+function registryPath(): string {
+  return (
+    process.env.POCHETE_BITBUCKET_OPEN_PR_AUTH_PROFILES_FILE ?? path.join(moduleDir, 'auth-profiles.json')
+  );
+}
 
 export interface AuthProfile {
   readonly emailEnvVar: string;
   readonly apiTokenEnvVar: string;
 }
 
-const AUTH_PROFILES: Readonly<Record<string, AuthProfile>> = JSON.parse(
-  readFileSync(REGISTRY_PATH, 'utf-8'),
-) as Record<string, AuthProfile>;
+function loadAuthProfiles(): Readonly<Record<string, AuthProfile>> {
+  return loadJsonRegistry<Record<string, AuthProfile>>(registryPath(), {});
+}
 
-export const AUTH_PROFILE_KEYS = Object.keys(AUTH_PROFILES);
+export function listAuthProfileKeys(): string[] {
+  return Object.keys(loadAuthProfiles());
+}
 
 export function resolveAuthProfile(key: string): AuthProfile {
-  const profile = AUTH_PROFILES[key];
+  const profiles = loadAuthProfiles();
+  const profile = profiles[key];
   if (!profile) {
     throw new Error(
-      `unknown authProfile "${key}" — registered profiles: ${AUTH_PROFILE_KEYS.join(', ')} (see auth-profiles.json)`,
+      `unknown authProfile "${key}" — registered profiles: ${Object.keys(profiles).join(', ')} (see auth-profiles.json)`,
     );
   }
   return profile;

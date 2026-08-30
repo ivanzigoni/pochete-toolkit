@@ -1,17 +1,18 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { EnvConfig } from '../../../../src/shared/env-config.js';
 import {
   assertFullyConfigured,
-  ENVIRONMENT_KEYS,
+  listEnvironmentKeys,
   requireConfiguredEnvironmentIn,
   resolveCredential,
   resolveEnvironmentIn,
 } from '../../../../src/tools/portainer-get-container-logs/environments.js';
 import { writeTempEnvFile } from '../../../helpers/env-file.js';
+import { writeTempJsonFile } from '../../../helpers/json-file.js';
 
-// Fixture-only registry — never the real, gitignored environments.json (see
-// environments.example.json for its shape), so no real deployment's host/stackNamespace ever
-// appears as a literal in this test file.
+// Fixture-only registry — never the real, gitignored config.json (see config.example.json for
+// its shape), so no real deployment's host/stackNamespace ever appears as a literal in this test
+// file.
 const FAKE_REGISTRY = {
   hml: {
     envVar: 'PORTAINER_HML_API_KEY',
@@ -19,6 +20,7 @@ const FAKE_REGISTRY = {
     endpointId: 1,
     headerName: 'X-API-Key',
     stackNamespace: 'example-stack-hml',
+    services: ['svc-a', 'svc-b'],
   },
   prd: {
     envVar: 'PORTAINER_PRD_API_KEY',
@@ -26,10 +28,11 @@ const FAKE_REGISTRY = {
     endpointId: 1,
     headerName: 'X-API-Key',
     stackNamespace: 'example-stack-prd',
+    services: ['svc-a'],
   },
 };
 
-const ENV_FILE_VAR = 'CEM_MCP_ENV_FILE';
+const ENV_FILE_VAR = 'POCHETE_MCP_ENV_FILE';
 const originalEnvFileVar = process.env[ENV_FILE_VAR];
 let cleanupCurrentEnvFile: (() => Promise<void>) | undefined;
 
@@ -47,9 +50,31 @@ afterEach(async () => {
   cleanupCurrentEnvFile = undefined;
 });
 
-describe('ENVIRONMENT_KEYS', () => {
+// listEnvironmentKeys/resolveCredential (unlike resolveEnvironmentIn/requireConfiguredEnvironmentIn
+// above) read the real config.json instead of taking a registry parameter — point
+// POCHETE_PORTAINER_CONFIG_FILE at this fixture for the whole file so they see FAKE_REGISTRY
+// too, never the real, gitignored config.json.
+const CONFIG_FILE_VAR = 'POCHETE_PORTAINER_CONFIG_FILE';
+const originalConfigFileVar = process.env[CONFIG_FILE_VAR];
+let cleanupConfigFile: (() => Promise<void>) | undefined;
+
+beforeAll(async () => {
+  const { path: configPath, cleanup } = await writeTempJsonFile('config.json', {
+    environments: FAKE_REGISTRY,
+  });
+  cleanupConfigFile = cleanup;
+  process.env[CONFIG_FILE_VAR] = configPath;
+});
+
+afterAll(async () => {
+  if (originalConfigFileVar === undefined) delete process.env[CONFIG_FILE_VAR];
+  else process.env[CONFIG_FILE_VAR] = originalConfigFileVar;
+  await cleanupConfigFile?.();
+});
+
+describe('listEnvironmentKeys', () => {
   it('includes "hml" and "prd"', () => {
-    expect(ENVIRONMENT_KEYS).toEqual(expect.arrayContaining(['hml', 'prd']));
+    expect(listEnvironmentKeys()).toEqual(expect.arrayContaining(['hml', 'prd']));
   });
 });
 
@@ -93,6 +118,7 @@ describe('assertFullyConfigured', () => {
     endpointId: null,
     headerName: 'X-API-Key',
     stackNamespace: null,
+    services: [],
   };
 
   it('returns the environment unchanged when every nullable field is already set', () => {

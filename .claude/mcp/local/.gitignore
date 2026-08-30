@@ -31,9 +31,8 @@ pnpm-debug.log*
 # local only, the committed counterpart is its *.example.json sibling.
 src/tools/safe-curl/auth-profiles.json
 src/tools/bitbucket-open-pr/auth-profiles.json
-src/tools/safe-query/connection-profiles.json
-src/tools/safe-query/mask-columns.json
-src/tools/portainer-get-container-logs/environments.json
+src/tools/safe-query/config.json
+src/tools/portainer-get-container-logs/config.json
 
 # OS files
 .DS_Store

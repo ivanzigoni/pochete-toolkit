@@ -3,11 +3,7 @@ import { z } from 'zod';
 
 import { EnvConfig } from '../../shared/env-config.js';
 import { finalizeToolOutput, OUTPUT_FILE_SHAPE } from '../../shared/tool-output.js';
-import {
-  CONNECTION_PROFILE_KEYS,
-  resolveConnectionPassword,
-  resolveConnectionProfile,
-} from './connection-profiles.js';
+import { resolveConnectionPassword, resolveConnectionProfile } from './connection-profiles.js';
 import { resolveSafeQueryLimits } from './limits.js';
 import { maskSensitiveColumns } from './mask.js';
 import { runQuery } from './query.js';
@@ -20,10 +16,12 @@ const INPUT_SHAPE = {
   // instead of a raw Zod schema error.
   query: z.string(),
   connection: z
-    .enum(CONNECTION_PROFILE_KEYS as [string, ...string[]])
+    .string()
+    .min(1)
     .describe(
-      'Which registered connection profile to query (see connection-profiles.json). No default ' +
-        `— always state it explicitly. Registered connections: ${CONNECTION_PROFILE_KEYS.join(', ')}`,
+      'Which registered connection profile to query (see config.json). No default ' +
+        '— always state it explicitly. An unregistered value returns an error listing the ' +
+        'connections actually registered.',
     ),
   ...OUTPUT_FILE_SHAPE,
 };
@@ -38,7 +36,7 @@ export function registerSafeQueryTool(server: McpServer): void {
         'returns the result as JSON. Write statements are rejected mechanically ' +
         '(string/comment-aware scanner, plus every query runs inside a transaction that is ' +
         'always rolled back) — not just by convention. Engine/host/port/database/user for each ' +
-        "registered connection live in this server's own connection-profiles.json; only the " +
+        "registered connection live in this server's own config.json; only the " +
         "password stays out of it, behind the env var that profile names in this server's own " +
         '.env. Query timeout and max row count are fixed server-side and shared across every ' +
         'connection, not caller-supplied.',

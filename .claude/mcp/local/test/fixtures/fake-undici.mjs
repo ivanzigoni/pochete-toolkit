@@ -35,9 +35,9 @@ function portainerApiRoot(host, endpointId) {
 
 // Fixture-only registry — genericized on purpose, never the real infra this fixture used to
 // mirror literally. The portainer e2e suite (test/e2e/portainer-get-container-logs.test.ts)
-// injects a matching environments.json (same host/endpointId/stackNamespace, via
-// CEM_PORTAINER_ENVIRONMENTS_FILE) into the spawned server process, so the two stay in sync
-// without either one reading real, gitignored infra.
+// injects a matching config.json (same host/endpointId/stackNamespace, via
+// POCHETE_PORTAINER_CONFIG_FILE) into the spawned server process, so the two stay in sync without
+// either one reading real, gitignored infra.
 export const PORTAINER_HML_HOST = 'portainer-hml.example.internal';
 export const PORTAINER_PRD_HOST = 'portainer.example.internal';
 export const PORTAINER_ENDPOINT_ID = 1;
@@ -53,11 +53,11 @@ const PORTAINER_ENVIRONMENTS = [
     containers: [
       {
         Id: PORTAINER_FAKE_CONTAINER_ID,
-        Labels: { 'com.docker.swarm.service.name': `${PORTAINER_HML_STACK_NAMESPACE}_cem-billing-service` },
+        Labels: { 'com.docker.swarm.service.name': `${PORTAINER_HML_STACK_NAMESPACE}_svc-a` },
       },
       {
         Id: 'release-stack-container-id',
-        Labels: { 'com.docker.swarm.service.name': 'example-stack-release_cem-billing-service' },
+        Labels: { 'com.docker.swarm.service.name': 'example-stack-release_svc-a' },
       },
     ],
     validContainerId: PORTAINER_FAKE_CONTAINER_ID,
@@ -71,7 +71,7 @@ const PORTAINER_ENVIRONMENTS = [
     containers: [
       {
         Id: PORTAINER_PRD_FAKE_CONTAINER_ID,
-        Labels: { 'com.docker.swarm.service.name': `${PORTAINER_PRD_STACK_NAMESPACE}_cem-billing-service` },
+        Labels: { 'com.docker.swarm.service.name': `${PORTAINER_PRD_STACK_NAMESPACE}_svc-a` },
       },
     ],
     validContainerId: PORTAINER_PRD_FAKE_CONTAINER_ID,

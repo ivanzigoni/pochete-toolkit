@@ -1,9 +1,0 @@
-{
-  "example-connection": {
-    "engine": "postgres",
-    "host": "db.example.internal",
-    "database": "example_database",
-    "user": "example_user",
-    "passwordEnvVar": "SAFE_QUERY_EXAMPLE_CONNECTION_PASSWORD"
-  }
-}

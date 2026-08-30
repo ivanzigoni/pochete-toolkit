@@ -1,5 +1,5 @@
 // Covers safe-curl end to end through the real MCP server process — cookie injection from the
-// authProfile's registered env var (CEM_SAFE_CURL_PRD_AUTH_COOKIE for the "cem" profile), the
+// authProfile's registered env var (SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE for the "example-profile" profile), the
 // missing-env-var error path, and mechanical rejection of a curl that sets its own
 // Cookie/Authorization header — the same "spawn the real server, fake only the external driver"
 // approach as test/e2e/safe-query.test.ts, with `undici` faked instead of a DB driver (see
@@ -10,6 +10,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { writeTempEnvFile } from '../helpers/env-file.js';
+import { writeTempJsonFile } from '../helpers/json-file.js';
 
 const SERVER_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const CALL_TOOL_MJS = path.join(SERVER_ROOT, 'bin', 'call-tool.mjs');
@@ -24,6 +25,12 @@ const AUTH_COOKIE = 'cognitoRefreshToken=fake-token; Authorization=fake-jwt';
 const ECHO_URL = 'https://example.test/echo';
 const SET_COOKIE_URL = 'https://example.test/set-cookie';
 
+// Injected via POCHETE_SAFE_CURL_AUTH_PROFILES_FILE into the spawned server process below — the
+// same shape as the real, gitignored auth-profiles.json (see auth-profiles.example.json).
+const FAKE_AUTH_PROFILES = {
+  'example-profile': { envVar: 'SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE' },
+};
+
 interface CallResult {
   stdout: string;
   stderr: string;
@@ -31,20 +38,29 @@ interface CallResult {
 }
 
 // envOverrides is written to an isolated temp .env file (test/helpers/env-file.ts) that the
-// child is pointed at via CEM_MCP_ENV_FILE — never the real .env, never process.env directly
+// child is pointed at via POCHETE_MCP_ENV_FILE — never the real .env, never process.env directly
 // (EnvConfig reads neither). Passing '' for a var (rather than omitting it) is what simulates
 // "configured but blank", regardless of whether a real .env with this var sits on disk.
 async function callSafeCurl(
   toolArguments: Record<string, unknown>,
   envOverrides: Record<string, string>,
 ): Promise<CallResult> {
-  const { path: envFile, cleanup } = await writeTempEnvFile(envOverrides);
+  const { path: envFile, cleanup: cleanupEnvFile } = await writeTempEnvFile(envOverrides);
+  const { path: authProfilesFile, cleanup: cleanupAuthProfilesFile } = await writeTempJsonFile(
+    'auth-profiles.json',
+    FAKE_AUTH_PROFILES,
+  );
+  const cleanup = async () => {
+    await cleanupEnvFile();
+    await cleanupAuthProfilesFile();
+  };
   try {
     return await new Promise<CallResult>((resolve, reject) => {
       const env: Record<string, string | undefined> = {
         ...process.env,
         NODE_OPTIONS: `--import ${pathToFileURL(REGISTER_FAKE_DRIVERS).href}`,
-        CEM_MCP_ENV_FILE: envFile,
+        POCHETE_MCP_ENV_FILE: envFile,
+        POCHETE_SAFE_CURL_AUTH_PROFILES_FILE: authProfilesFile,
       };
 
       const child = spawn(process.execPath, [CALL_TOOL_MJS, 'safe-curl'], { env });
@@ -59,7 +75,7 @@ async function callSafeCurl(
       child.on('error', reject);
       child.on('close', (exitCode) => resolve({ stdout, stderr, exitCode }));
 
-      child.stdin.write(JSON.stringify({ authProfile: 'cem', ...toolArguments }));
+      child.stdin.write(JSON.stringify({ authProfile: 'example-profile', ...toolArguments }));
       child.stdin.end();
     });
   } finally {
@@ -68,10 +84,10 @@ async function callSafeCurl(
 }
 
 describe('safe-curl (via call-tool.mjs against the real MCP server)', () => {
-  it('injects the "cem" authProfile cookie as the Cookie header on a GET', async () => {
+  it('injects the "example-profile" authProfile cookie as the Cookie header on a GET', async () => {
     const { stdout, exitCode } = await callSafeCurl(
       { curl: `curl '${ECHO_URL}'` },
-      { CEM_SAFE_CURL_PRD_AUTH_COOKIE: AUTH_COOKIE },
+      { SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE: AUTH_COOKIE },
     );
     expect(exitCode).toBe(0);
     const payload = JSON.parse(stdout);
@@ -86,7 +102,7 @@ describe('safe-curl (via call-tool.mjs against the real MCP server)', () => {
       {
         curl: `curl '${ECHO_URL}' -H 'content-type: application/json' --data-raw '{"a":1}'`,
       },
-      { CEM_SAFE_CURL_PRD_AUTH_COOKIE: AUTH_COOKIE },
+      { SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE: AUTH_COOKIE },
     );
     expect(exitCode).toBe(0);
     const payload = JSON.parse(stdout);
@@ -99,7 +115,7 @@ describe('safe-curl (via call-tool.mjs against the real MCP server)', () => {
   it('rejects a curl that sets its own Cookie header, naming it', async () => {
     const { stderr, exitCode } = await callSafeCurl(
       { curl: `curl '${ECHO_URL}' -b 'sessionid=abc'` },
-      { CEM_SAFE_CURL_PRD_AUTH_COOKIE: AUTH_COOKIE },
+      { SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE: AUTH_COOKIE },
     );
     expect(exitCode).toBe(1);
     expect(stderr).toContain('Cookie');
@@ -109,27 +125,27 @@ describe('safe-curl (via call-tool.mjs against the real MCP server)', () => {
   it('rejects a curl that sets its own Authorization header, naming it', async () => {
     const { stderr, exitCode } = await callSafeCurl(
       { curl: `curl '${ECHO_URL}' -H 'Authorization: Bearer xyz'` },
-      { CEM_SAFE_CURL_PRD_AUTH_COOKIE: AUTH_COOKIE },
+      { SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE: AUTH_COOKIE },
     );
     expect(exitCode).toBe(1);
     expect(stderr).toContain('Authorization');
   });
 
-  it('rejects when the "cem" authProfile env var is not set, naming it and the profile', async () => {
+  it('rejects when the "example-profile" authProfile env var is not set, naming it and the profile', async () => {
     const { stderr, exitCode } = await callSafeCurl(
       { curl: `curl '${ECHO_URL}'` },
-      { CEM_SAFE_CURL_PRD_AUTH_COOKIE: '' },
+      { SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE: '' },
     );
     expect(exitCode).toBe(1);
-    expect(stderr).toContain('CEM_SAFE_CURL_PRD_AUTH_COOKIE');
-    expect(stderr).toContain('authProfile "cem"');
+    expect(stderr).toContain('SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE');
+    expect(stderr).toContain('authProfile "example-profile"');
     expect(stderr).toContain('is not set');
   });
 
   it('rejects an unregistered authProfile', async () => {
     const { stderr, exitCode } = await callSafeCurl(
       { curl: `curl '${ECHO_URL}'`, authProfile: 'not-a-real-profile' },
-      { CEM_SAFE_CURL_PRD_AUTH_COOKIE: AUTH_COOKIE },
+      { SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE: AUTH_COOKIE },
     );
     expect(exitCode).toBe(1);
     expect(stderr).toContain('authProfile');
@@ -138,7 +154,7 @@ describe('safe-curl (via call-tool.mjs against the real MCP server)', () => {
   it('rejects a malformed curl (unsupported flag) without ever making a request', async () => {
     const { stderr, exitCode } = await callSafeCurl(
       { curl: `curl '${ECHO_URL}' --made-up-flag` },
-      { CEM_SAFE_CURL_PRD_AUTH_COOKIE: AUTH_COOKIE },
+      { SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE: AUTH_COOKIE },
     );
     expect(exitCode).toBe(1);
     expect(stderr).toContain('--made-up-flag');
@@ -147,7 +163,7 @@ describe('safe-curl (via call-tool.mjs against the real MCP server)', () => {
   it('redacts a set-cookie response header instead of returning it verbatim', async () => {
     const { stdout, exitCode } = await callSafeCurl(
       { curl: `curl '${SET_COOKIE_URL}'` },
-      { CEM_SAFE_CURL_PRD_AUTH_COOKIE: AUTH_COOKIE },
+      { SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE: AUTH_COOKIE },
     );
     expect(exitCode).toBe(0);
     const payload = JSON.parse(stdout);
@@ -165,7 +181,7 @@ describe('safe-curl (via call-tool.mjs against the real MCP server)', () => {
     it('writes the full result to disk, redacted, and returns a summary with bodyLength instead of body', async () => {
       const { stdout, exitCode } = await callSafeCurl(
         { curl: `curl '${SET_COOKIE_URL}'`, outputFileName: 'e2e-result.json' },
-        { CEM_SAFE_CURL_PRD_AUTH_COOKIE: AUTH_COOKIE },
+        { SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE: AUTH_COOKIE },
       );
       expect(exitCode).toBe(0);
       const summary = JSON.parse(stdout);
@@ -183,7 +199,7 @@ describe('safe-curl (via call-tool.mjs against the real MCP server)', () => {
     it('rejects an outputFileName containing a path separator', async () => {
       const { stderr, exitCode } = await callSafeCurl(
         { curl: `curl '${ECHO_URL}'`, outputFileName: '../escape.json' },
-        { CEM_SAFE_CURL_PRD_AUTH_COOKIE: AUTH_COOKIE },
+        { SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE: AUTH_COOKIE },
       );
       expect(exitCode).toBe(1);
       expect(stderr).toContain('outputFileName');
@@ -192,8 +208,8 @@ describe('safe-curl (via call-tool.mjs against the real MCP server)', () => {
 
   it('two concurrent calls each get an independent result', async () => {
     const [a, b] = await Promise.all([
-      callSafeCurl({ curl: `curl '${ECHO_URL}'` }, { CEM_SAFE_CURL_PRD_AUTH_COOKIE: 'cookie-a' }),
-      callSafeCurl({ curl: `curl '${ECHO_URL}'` }, { CEM_SAFE_CURL_PRD_AUTH_COOKIE: 'cookie-b' }),
+      callSafeCurl({ curl: `curl '${ECHO_URL}'` }, { SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE: 'cookie-a' }),
+      callSafeCurl({ curl: `curl '${ECHO_URL}'` }, { SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE: 'cookie-b' }),
     ]);
     expect(a.exitCode).toBe(0);
     expect(b.exitCode).toBe(0);

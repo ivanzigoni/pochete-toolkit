@@ -7,21 +7,7 @@ import { demuxDockerLogStream, stripAnsiCodes } from './demux.js';
 import { fetchRawContainerLogs, listContainers } from './docker-client.js';
 import { requireConfiguredEnvironment, resolveCredential } from './environments.js';
 import { resolveContainerId } from './resolve-container.js';
-
-// The cem-* services this Swarm stack actually runs (CLAUDE.md's subproject table) — a closed
-// enum, not a free-text field, so a typo fails fast instead of resolving to "0 containers found"
-// with no hint why. service-cemetery/service-users are deliberately excluded: they are not part
-// of this Docker Swarm (confirmed live — absent from the full container listing on both stacks).
-const SERVICES = [
-  'cem-common-service',
-  'cem-cemetery-service',
-  'cem-billing-service',
-  'cem-associate-service',
-  'cem-notification-service',
-  'cem-tomb-service',
-  'cem-death-service',
-  'cem-bank-slip-adapter',
-] as const;
+import { requireRegisteredServiceIn } from './services.js';
 
 const DEFAULT_TAIL = 200;
 const MAX_TAIL = 5000;
@@ -30,13 +16,19 @@ const INPUT_SHAPE = {
   environment: z
     .enum(['hml', 'prd'])
     .describe(
-      'Which registered Portainer environment to reach (see environments.json). "hml" and ' +
+      'Which registered Portainer environment to reach (see config.json). "hml" and ' +
         '"prd" are both fully configured — a future environment added to the enum before its ' +
         'host/endpointId/stackNamespace are filled in would fail by name instead.',
     ),
   service: z
-    .enum(SERVICES)
-    .describe('Which cem-* service to pull logs from — the exact set this Swarm stack runs.'),
+    .string()
+    .min(1)
+    .describe(
+      'Which registered service to pull logs from — registered for the given environment ' +
+        'specifically (see config.json; environments don\'t share configuration, so the same ' +
+        'name may be registered for one and not the other). An unregistered value returns an ' +
+        'error listing the services actually registered for that environment.',
+    ),
   tail: z
     .number()
     .int()
@@ -62,9 +54,9 @@ export function registerPortainerGetContainerLogsTool(server: McpServer): void {
   server.registerTool(
     'portainer-get-container-logs',
     {
-      title: 'Fetch recent container logs for a cem-* service via the Portainer API',
+      title: 'Fetch recent container logs for a registered service via the Portainer API',
       description:
-        'Resolves the running container for a given cem-* service inside a given environment\'s ' +
+        'Resolves the running container for a given registered service inside a given environment\'s ' +
         'Swarm stack (matching the "com.docker.swarm.service.name" label against ' +
         '"<stackNamespace>_<service>" — plain service-name matching is not enough, since more ' +
         'than one stack can run the identical service set on the same Portainer endpoint), then ' +
@@ -81,6 +73,7 @@ export function registerPortainerGetContainerLogsTool(server: McpServer): void {
     async (input) => {
       try {
         const env = requireConfiguredEnvironment(input.environment);
+        requireRegisteredServiceIn(env.services, input.service);
         const credential = resolveCredential(
           input.environment,
           new EnvConfig('portainer-get-container-logs'),

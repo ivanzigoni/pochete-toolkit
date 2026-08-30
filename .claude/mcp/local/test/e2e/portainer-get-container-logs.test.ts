@@ -20,23 +20,30 @@ const PORTAINER_ENDPOINT_ID = 1;
 const PORTAINER_HML_STACK_NAMESPACE = 'example-stack-hml';
 const PORTAINER_PRD_STACK_NAMESPACE = 'example-stack-prd';
 
-// Injected via CEM_PORTAINER_ENVIRONMENTS_FILE into the spawned server process below — the same
-// shape as the real, gitignored environments.json (see environments.example.json), but only ever
-// this fixture's own generic host/stackNamespace, matching fake-undici.mjs exactly.
-const FAKE_ENVIRONMENTS_REGISTRY = {
-  hml: {
-    envVar: 'PORTAINER_HML_API_KEY',
-    host: PORTAINER_HML_HOST,
-    endpointId: PORTAINER_ENDPOINT_ID,
-    headerName: 'X-API-Key',
-    stackNamespace: PORTAINER_HML_STACK_NAMESPACE,
-  },
-  prd: {
-    envVar: 'PORTAINER_PRD_API_KEY',
-    host: PORTAINER_PRD_HOST,
-    endpointId: PORTAINER_ENDPOINT_ID,
-    headerName: 'X-API-Key',
-    stackNamespace: PORTAINER_PRD_STACK_NAMESPACE,
+// Injected via POCHETE_PORTAINER_CONFIG_FILE into the spawned server process below — the same
+// shape as the real, gitignored config.json (see config.example.json), but only ever this
+// fixture's own generic host/stackNamespace/service names, matching fake-undici.mjs exactly.
+const FAKE_CONFIG = {
+  environments: {
+    hml: {
+      envVar: 'PORTAINER_HML_API_KEY',
+      host: PORTAINER_HML_HOST,
+      endpointId: PORTAINER_ENDPOINT_ID,
+      headerName: 'X-API-Key',
+      stackNamespace: PORTAINER_HML_STACK_NAMESPACE,
+      // "svc-b" is registered here but has no matching container in fake-undici.mjs's hml fixture
+      // on purpose — exercises the "registered but no container in this stack" error path,
+      // distinct from "not registered at all".
+      services: ['svc-a', 'svc-b'],
+    },
+    prd: {
+      envVar: 'PORTAINER_PRD_API_KEY',
+      host: PORTAINER_PRD_HOST,
+      endpointId: PORTAINER_ENDPOINT_ID,
+      headerName: 'X-API-Key',
+      stackNamespace: PORTAINER_PRD_STACK_NAMESPACE,
+      services: ['svc-a'],
+    },
   },
 };
 
@@ -60,21 +67,21 @@ async function callPortainerGetContainerLogs(
   envOverrides: Record<string, string>,
 ): Promise<CallResult> {
   const { path: envFile, cleanup: cleanupEnvFile } = await writeTempEnvFile(envOverrides);
-  const { path: registryFile, cleanup: cleanupRegistryFile } = await writeTempJsonFile(
-    'environments.json',
-    FAKE_ENVIRONMENTS_REGISTRY,
+  const { path: configFile, cleanup: cleanupConfigFile } = await writeTempJsonFile(
+    'config.json',
+    FAKE_CONFIG,
   );
   const cleanup = async () => {
     await cleanupEnvFile();
-    await cleanupRegistryFile();
+    await cleanupConfigFile();
   };
   try {
     return await new Promise<CallResult>((resolve, reject) => {
       const env: Record<string, string | undefined> = {
         ...process.env,
         NODE_OPTIONS: `--import ${pathToFileURL(REGISTER_FAKE_DRIVERS).href}`,
-        CEM_MCP_ENV_FILE: envFile,
-        CEM_PORTAINER_ENVIRONMENTS_FILE: registryFile,
+        POCHETE_MCP_ENV_FILE: envFile,
+        POCHETE_PORTAINER_CONFIG_FILE: configFile,
       };
 
       const child = spawn(process.execPath, [CALL_TOOL_MJS, 'portainer-get-container-logs'], { env });
@@ -100,13 +107,13 @@ async function callPortainerGetContainerLogs(
 describe('portainer-get-container-logs (via call-tool.mjs against the real MCP server)', () => {
   it('resolves the right stack container and returns clean, demuxed, ANSI-free logs', async () => {
     const { stdout, exitCode } = await callPortainerGetContainerLogs(
-      { service: 'cem-billing-service' },
+      { service: 'svc-a' },
       { PORTAINER_HML_API_KEY: PORTAINER_FAKE_API_KEY },
     );
     expect(exitCode).toBe(0);
     const payload = JSON.parse(stdout);
     expect(payload.environment).toBe('hml');
-    expect(payload.service).toBe('cem-billing-service');
+    expect(payload.service).toBe('svc-a');
     expect(payload.containerId).toBe(
       'f59ef0407494b49caae6d2c9ca969cfa4d3db8cebe8f78a8db227cd956eba618',
     );
@@ -115,14 +122,14 @@ describe('portainer-get-container-logs (via call-tool.mjs against the real MCP s
 
   it('defaults tail to 200 when not given', async () => {
     const { stdout, exitCode } = await callPortainerGetContainerLogs(
-      { service: 'cem-billing-service' },
+      { service: 'svc-a' },
       { PORTAINER_HML_API_KEY: PORTAINER_FAKE_API_KEY },
     );
     expect(exitCode).toBe(0);
     expect(JSON.parse(stdout).tail).toBe(200);
   });
 
-  it('rejects an unregistered service name (closed enum, no free text)', async () => {
+  it('rejects an unregistered service name', async () => {
     const { exitCode } = await callPortainerGetContainerLogs(
       { service: 'not-a-real-service' },
       { PORTAINER_HML_API_KEY: PORTAINER_FAKE_API_KEY },
@@ -132,7 +139,7 @@ describe('portainer-get-container-logs (via call-tool.mjs against the real MCP s
 
   it('fetches from "prd" using its own env var and host, distinct from "hml"', async () => {
     const { stdout, exitCode } = await callPortainerGetContainerLogs(
-      { environment: 'prd', service: 'cem-billing-service' },
+      { environment: 'prd', service: 'svc-a' },
       { PORTAINER_PRD_API_KEY: PORTAINER_FAKE_API_KEY },
     );
     expect(exitCode).toBe(0);
@@ -143,7 +150,7 @@ describe('portainer-get-container-logs (via call-tool.mjs against the real MCP s
 
   it('rejects when the "hml" env var is not set, naming it and the environment', async () => {
     const { stderr, exitCode } = await callPortainerGetContainerLogs(
-      { service: 'cem-billing-service' },
+      { service: 'svc-a' },
       { PORTAINER_HML_API_KEY: '' },
     );
     expect(exitCode).toBe(1);
@@ -153,7 +160,7 @@ describe('portainer-get-container-logs (via call-tool.mjs against the real MCP s
 
   it('surfaces a clear error when the credential is wrong (Portainer returns 403)', async () => {
     const { stderr, exitCode } = await callPortainerGetContainerLogs(
-      { service: 'cem-billing-service' },
+      { service: 'svc-a' },
       { PORTAINER_HML_API_KEY: 'wrong-token' },
     );
     expect(exitCode).toBe(1);
@@ -162,11 +169,11 @@ describe('portainer-get-container-logs (via call-tool.mjs against the real MCP s
 
   it('surfaces a clear error when the service has no container in this stack', async () => {
     const { stderr, exitCode } = await callPortainerGetContainerLogs(
-      { service: 'cem-tomb-service' },
+      { service: 'svc-b' },
       { PORTAINER_HML_API_KEY: PORTAINER_FAKE_API_KEY },
     );
     expect(exitCode).toBe(1);
-    expect(stderr).toContain('cem-tomb-service');
+    expect(stderr).toContain('svc-b');
   });
 
   describe('outputFileName', () => {
@@ -179,7 +186,7 @@ describe('portainer-get-container-logs (via call-tool.mjs against the real MCP s
 
     it('writes the full result to disk and returns a summary with logsLength instead of logs', async () => {
       const { stdout, exitCode } = await callPortainerGetContainerLogs(
-        { service: 'cem-billing-service', outputFileName: 'e2e-result.json' },
+        { service: 'svc-a', outputFileName: 'e2e-result.json' },
         { PORTAINER_HML_API_KEY: PORTAINER_FAKE_API_KEY },
       );
       expect(exitCode).toBe(0);

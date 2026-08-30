@@ -1,6 +1,33 @@
-import { describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { maskSensitiveColumns } from '../../../../src/tools/safe-query/mask.js';
+import { writeTempJsonFile } from '../../../helpers/json-file.js';
+
+// maskSensitiveColumns reads the real config.json's "maskColumns" section directly (no
+// registry-as-parameter pure variant exists, since the column lists are the whole point of this
+// module) — point POCHETE_SAFE_QUERY_CONFIG_FILE at a fixture for the whole file, mirroring the
+// "partial"/"full" LGPD categories documented in config.example.json.
+const CONFIG_FILE_VAR = 'POCHETE_SAFE_QUERY_CONFIG_FILE';
+const originalConfigFileVar = process.env[CONFIG_FILE_VAR];
+let cleanupConfigFile: (() => Promise<void>) | undefined;
+
+beforeAll(async () => {
+  const { path: configPath, cleanup } = await writeTempJsonFile('config.json', {
+    connections: {},
+    maskColumns: {
+      partial: ['cpf', 'datanascimento', 'nome'],
+      full: ['religiao', 'senha', 'codreligiao'],
+    },
+  });
+  cleanupConfigFile = cleanup;
+  process.env[CONFIG_FILE_VAR] = configPath;
+});
+
+afterAll(async () => {
+  if (originalConfigFileVar === undefined) delete process.env[CONFIG_FILE_VAR];
+  else process.env[CONFIG_FILE_VAR] = originalConfigFileVar;
+  await cleanupConfigFile?.();
+});
 
 describe('maskSensitiveColumns', () => {
   it('leaves columns that are not on the LGPD list untouched', () => {

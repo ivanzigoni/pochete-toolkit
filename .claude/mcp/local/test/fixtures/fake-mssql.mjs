@@ -13,7 +13,7 @@ const CANNED_ROWS = {
   ],
   // Exercises test/e2e/safe-query.test.ts' Unicode/emoji and shell-metacharacter cases end to
   // end (real server -> real validation -> this fake driver) now that the checked-in
-  // "cemiterio_dev" connection profile is mssql — mirrors the equivalent entries in fake-pg.mjs.
+  // "example-connection" connection profile is mssql — mirrors the equivalent entries in fake-pg.mjs.
   "select 'wörld 🌍' as greeting": [{ greeting: 'wörld 🌍' }],
   "select 'a; drop table x; --' as one": [{ one: 'a; DROP TABLE x; --' }],
 };

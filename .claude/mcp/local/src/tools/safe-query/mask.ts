@@ -3,24 +3,15 @@
  * Matches purely by result column name (case-insensitive) — the tool accepts arbitrary read-only
  * SQL (joins, aliases, computed columns), so there is no reliable way to trace a returned column
  * back to its source table without a full SQL parser. This module carries no domain knowledge of
- * its own: the column-name lists live in `mask-columns.json`, curated per project by inventorying
- * the DB tables actually read by that project's services and classifying their columns against
- * LGPD personal/sensitive-data categories. A name match is intentionally global (any table), not
- * scoped to specific tables, since e.g. `CPF` is sensitive regardless of which table it came from.
+ * its own: the column-name lists live in this tool's own config.json (`maskColumns`, see
+ * config.ts), curated per project by inventorying the DB tables actually read by that project's
+ * services and classifying their columns against LGPD personal/sensitive-data categories. A name
+ * match is intentionally global (any table), not scoped to specific tables, since e.g. `CPF` is
+ * sensitive regardless of which table it came from.
  */
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { loadConfig } from './config.js';
 
 export type MaskType = 'partial' | 'full';
-
-interface MaskColumnsRegistry {
-  readonly partial: readonly string[];
-  readonly full: readonly string[];
-}
-
-const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-const MASK_COLUMNS_REGISTRY_PATH = path.join(moduleDir, 'mask-columns.json');
 
 /**
  * `partial`: direct identifiers, names, contact/address, financial account/card, and birth-date
@@ -29,15 +20,18 @@ const MASK_COLUMNS_REGISTRY_PATH = path.join(moduleDir, 'mask-columns.json');
  * value). `full`: LGPD art. 5º II sensitive categories (health, race/color, religion, sex/gender),
  * credentials, biometric/signature references, and free-text notes — no partial reveal is safe
  * for these, so the whole value is replaced with `***`.
+ *
+ * Read fresh on every call, never at module load time — a missing config.json degrades to
+ * "nothing masked" for this call rather than crashing the shared MCP server on import. See
+ * config.ts / shared/json-registry.ts.
  */
-const { partial: PARTIAL_MASK_COLUMNS, full: FULL_MASK_COLUMNS }: MaskColumnsRegistry = JSON.parse(
-  readFileSync(MASK_COLUMNS_REGISTRY_PATH, 'utf-8'),
-) as MaskColumnsRegistry;
-
-const MASK_TYPE_BY_COLUMN: ReadonlyMap<string, MaskType> = new Map([
-  ...PARTIAL_MASK_COLUMNS.map((name): [string, MaskType] => [name, 'partial']),
-  ...FULL_MASK_COLUMNS.map((name): [string, MaskType] => [name, 'full']),
-]);
+function buildMaskTypeByColumn(): ReadonlyMap<string, MaskType> {
+  const { partial, full } = loadConfig().maskColumns;
+  return new Map([
+    ...partial.map((name): [string, MaskType] => [name, 'partial']),
+    ...full.map((name): [string, MaskType] => [name, 'full']),
+  ]);
+}
 
 const PARTIAL_MASK_PREFIX_LENGTH = 2;
 const MASK_PLACEHOLDER = '***';
@@ -60,8 +54,9 @@ export function maskSensitiveColumns(
   fields: readonly string[],
   rows: readonly Record<string, unknown>[],
 ): Record<string, unknown>[] {
+  const maskTypeByColumn = buildMaskTypeByColumn();
   const columnsToMask = fields
-    .map((field) => [field, MASK_TYPE_BY_COLUMN.get(field.toLowerCase())] as const)
+    .map((field) => [field, maskTypeByColumn.get(field.toLowerCase())] as const)
     .filter((entry): entry is [string, MaskType] => entry[1] !== undefined);
 
   if (columnsToMask.length === 0) return rows.slice();

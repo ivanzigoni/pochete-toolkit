@@ -2,42 +2,34 @@ import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import type { QueryResult } from '../../../../src/tools/safe-query/types.js';
 import { writeTempEnvFile } from '../../../helpers/env-file.js';
+import { writeTempJsonFile } from '../../../helpers/json-file.js';
 
 const { runQueryMock } = vi.hoisted(() => ({ runQueryMock: vi.fn() }));
 vi.mock('../../../../src/tools/safe-query/query.js', () => ({ runQuery: runQueryMock }));
 
 // Overrides only the connection profile lookup with fixture data — resolveConnectionPassword
-// stays real (it still needs the real, gitignored connection-profiles.json's passwordEnvVar
-// field), but resolveConnectionProfile/CONNECTION_PROFILE_KEYS never surface this test's real
-// host/user as a literal here; see connection-profiles.test.ts's FAKE_REGISTRY for the same fixture.
+// stays real (it reads the passwordEnvVar field from a fixture config.json injected below via
+// POCHETE_SAFE_QUERY_CONFIG_FILE, never the real one), but resolveConnectionProfile never
+// surfaces this test's real host/user as a literal here; see connection-profiles.test.ts's
+// FAKE_REGISTRY for the same fixture.
 vi.mock('../../../../src/tools/safe-query/connection-profiles.js', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('../../../../src/tools/safe-query/connection-profiles.js')>();
   return {
     ...actual,
-    CONNECTION_PROFILE_KEYS: ['cemiterio_dev', 'cemiterio_prd'],
     resolveConnectionProfile: (key: string) =>
       ({
-        cemiterio_dev: {
-          engine: 'mssql',
-          host: 'db-dev.example.internal',
-          port: 1433,
-          database: 'Cemiterio_DEV',
-          user: 'example_user',
-          ssl: false,
-          trustServerCert: false,
-        },
-        cemiterio_prd: {
+        'example-connection': {
           engine: 'mssql',
           host: 'db.example.internal',
           port: 1433,
-          database: 'Cemiterio',
+          database: 'example_database',
           user: 'example_user',
           ssl: false,
           trustServerCert: false,
@@ -48,16 +40,16 @@ vi.mock('../../../../src/tools/safe-query/connection-profiles.js', async (import
 
 const { registerSafeQueryTool } = await import('../../../../src/tools/safe-query/register.js');
 
-const ENV_FILE_VAR = 'CEM_MCP_ENV_FILE';
+const ENV_FILE_VAR = 'POCHETE_MCP_ENV_FILE';
 const originalEnvFileVar = process.env[ENV_FILE_VAR];
 let cleanupCurrentEnvFile: (() => Promise<void>) | undefined;
 
 const DEFAULT_VARS = {
-  SAFE_QUERY_CEM_HML_PASSWORD: 'fakepass',
+  SAFE_QUERY_EXAMPLE_CONNECTION_PASSWORD: 'fakepass',
 };
 
 // EnvConfig reads .env fresh per instantiation, never process.env — so a test that wants
-// non-default config points CEM_MCP_ENV_FILE at its own temp file via this helper instead of
+// non-default config points POCHETE_MCP_ENV_FILE at its own temp file via this helper instead of
 // mutating process.env directly. Omitting a key here means "absent from the file" (the same as
 // deleting it used to mean); pass '' explicitly to simulate "configured but blank".
 async function setEnvFile(overrides: Record<string, string> = {}): Promise<void> {
@@ -78,6 +70,36 @@ afterEach(async () => {
   cleanupCurrentEnvFile = undefined;
 });
 
+// resolveConnectionPassword (real, not mocked above) reads passwordEnvVar off the real config.json
+// — point POCHETE_SAFE_QUERY_CONFIG_FILE at a fixture for the whole file, reusing the same fixture
+// shape as connection-profiles.test.ts/mask.test.ts.
+const CONFIG_FILE_VAR = 'POCHETE_SAFE_QUERY_CONFIG_FILE';
+const originalConfigFileVar = process.env[CONFIG_FILE_VAR];
+let cleanupConfigFile: (() => Promise<void>) | undefined;
+
+beforeAll(async () => {
+  const { path: configPath, cleanup } = await writeTempJsonFile('config.json', {
+    connections: {
+      'example-connection': {
+        engine: 'mssql',
+        host: 'db.example.internal',
+        database: 'example_database',
+        user: 'example_user',
+        passwordEnvVar: 'SAFE_QUERY_EXAMPLE_CONNECTION_PASSWORD',
+      },
+    },
+    maskColumns: { partial: ['cpf'], full: ['religiao'] },
+  });
+  cleanupConfigFile = cleanup;
+  process.env[CONFIG_FILE_VAR] = configPath;
+});
+
+afterAll(async () => {
+  if (originalConfigFileVar === undefined) delete process.env[CONFIG_FILE_VAR];
+  else process.env[CONFIG_FILE_VAR] = originalConfigFileVar;
+  await cleanupConfigFile?.();
+});
+
 async function createConnectedClient(): Promise<Client> {
   const server = new McpServer({ name: 'test-server', version: '0.0.0' });
   registerSafeQueryTool(server);
@@ -95,17 +117,17 @@ describe('registerSafeQueryTool', () => {
 
     const result = await client.callTool({
       name: 'safe-query',
-      arguments: { query: 'SELECT 1 AS a', connection: 'cemiterio_dev' },
+      arguments: { query: 'SELECT 1 AS a', connection: 'example-connection' },
     });
 
     expect(result.isError).toBeFalsy();
     const content = result.content as { type: string; text: string }[];
     const payload = JSON.parse(content[0]!.text);
     expect(payload).toMatchObject({
-      connection: 'cemiterio_dev',
+      connection: 'example-connection',
       engine: 'mssql',
-      host: 'db-dev.example.internal',
-      database: 'Cemiterio_DEV',
+      host: 'db.example.internal',
+      database: 'example_database',
       columns: ['a'],
       rowCount: 1,
       totalRowCount: 1,
@@ -115,23 +137,23 @@ describe('registerSafeQueryTool', () => {
     expect(typeof payload.durationMs).toBe('number');
     expect(() => new Date(payload.executedAt).toISOString()).not.toThrow();
     expect(runQueryMock).toHaveBeenCalledWith(
-      expect.objectContaining({ engine: 'mssql', host: 'db-dev.example.internal' }),
+      expect.objectContaining({ engine: 'mssql', host: 'db.example.internal' }),
       'SELECT 1 AS a',
     );
   });
 
   it('reports a clear error and never calls runQuery when the password env var is unset', async () => {
-    await setEnvFile({ SAFE_QUERY_CEM_HML_PASSWORD: '' });
+    await setEnvFile({ SAFE_QUERY_EXAMPLE_CONNECTION_PASSWORD: '' });
     const client = await createConnectedClient();
 
     const result = await client.callTool({
       name: 'safe-query',
-      arguments: { query: 'SELECT 1', connection: 'cemiterio_dev' },
+      arguments: { query: 'SELECT 1', connection: 'example-connection' },
     });
 
     expect(result.isError).toBe(true);
     const content = result.content as { type: string; text: string }[];
-    expect(content[0]!.text).toContain('SAFE_QUERY_CEM_HML_PASSWORD');
+    expect(content[0]!.text).toContain('SAFE_QUERY_EXAMPLE_CONNECTION_PASSWORD');
     expect(content[0]!.text).toContain('is not set');
     expect(runQueryMock).not.toHaveBeenCalled();
   });
@@ -141,7 +163,7 @@ describe('registerSafeQueryTool', () => {
 
     const result = await client.callTool({
       name: 'safe-query',
-      arguments: { query: 'DELETE FROM t', connection: 'cemiterio_dev' },
+      arguments: { query: 'DELETE FROM t', connection: 'example-connection' },
     });
 
     expect(result.isError).toBe(true);
@@ -156,7 +178,7 @@ describe('registerSafeQueryTool', () => {
 
     const result = await client.callTool({
       name: 'safe-query',
-      arguments: { query: 'SELECT 1', connection: 'cemiterio_dev' },
+      arguments: { query: 'SELECT 1', connection: 'example-connection' },
     });
 
     expect(result.isError).toBe(true);
@@ -174,7 +196,7 @@ describe('registerSafeQueryTool', () => {
 
     const result = await client.callTool({
       name: 'safe-query',
-      arguments: { query: 'SELECT a FROM t', connection: 'cemiterio_dev' },
+      arguments: { query: 'SELECT a FROM t', connection: 'example-connection' },
     });
 
     const content = result.content as { type: string; text: string }[];
@@ -194,7 +216,7 @@ describe('registerSafeQueryTool', () => {
 
     const result = await client.callTool({
       name: 'safe-query',
-      arguments: { query: 'SELECT id, CPF, Religiao FROM Associados', connection: 'cemiterio_dev' },
+      arguments: { query: 'SELECT id, CPF, Religiao FROM Pessoas', connection: 'example-connection' },
     });
 
     const content = result.content as { type: string; text: string }[];
@@ -216,7 +238,7 @@ describe('registerSafeQueryTool', () => {
 
       const result = await client.callTool({
         name: 'safe-query',
-        arguments: { query: 'SELECT a FROM t', outputFileName: 'result.json', connection: 'cemiterio_dev' },
+        arguments: { query: 'SELECT a FROM t', outputFileName: 'result.json', connection: 'example-connection' },
       });
 
       expect(result.isError).toBeFalsy();
@@ -234,7 +256,7 @@ describe('registerSafeQueryTool', () => {
 
       const result = await client.callTool({
         name: 'safe-query',
-        arguments: { query: 'SELECT a FROM t', connection: 'cemiterio_dev' },
+        arguments: { query: 'SELECT a FROM t', connection: 'example-connection' },
       });
 
       const content = result.content as { type: string; text: string }[];

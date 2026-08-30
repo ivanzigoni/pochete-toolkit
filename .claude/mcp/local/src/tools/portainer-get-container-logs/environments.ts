@@ -1,35 +1,27 @@
 /**
- * Loads the registered Portainer environments from `environments.json` — self-contained to this
- * tool, deliberately not sharing safe-curl's `auth-profiles.json`/`auth-profiles.ts` even though
- * the "hml" entry reuses the same PORTAINER_HML_API_KEY env var value: this codebase's established
- * pattern (see safe-curl vs. bitbucket-open-pr) is one profile registry per tool, never a shared
- * import between tool directories, even when two tools happen to target the same external host.
- *
- * Read at module load time, like safe-curl's AUTH_PROFILES — every e2e test spawns its own fresh
- * process, so there is no ordering hazard in reading this once up front.
+ * Resolves the registered Portainer environments from this tool's config.json (see config.ts) —
+ * self-contained to this tool, deliberately not sharing safe-curl's
+ * `auth-profiles.json`/`auth-profiles.ts` even though the "hml" entry reuses the same
+ * PORTAINER_HML_API_KEY env var value: this codebase's established pattern (see safe-curl vs.
+ * bitbucket-open-pr) is one config file per tool, never a shared import between tool directories,
+ * even when two tools happen to target the same external host.
  */
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
 import type { EnvConfig } from '../../shared/env-config.js';
+import { loadConfig } from './config.js';
 import type { ConfiguredPortainerEnvironment, RawPortainerEnvironment } from './types.js';
 
-const moduleDir = path.dirname(fileURLToPath(import.meta.url));
-// Overridable so e2e tests can point this at a temp fixture instead of the real, gitignored
-// environments.json — mirrors EnvConfig's own CEM_MCP_ENV_FILE override for .env.
-const REGISTRY_PATH = process.env.CEM_PORTAINER_ENVIRONMENTS_FILE ?? path.join(moduleDir, 'environments.json');
+function loadEnvironments(): Readonly<Record<string, RawPortainerEnvironment>> {
+  return loadConfig().environments;
+}
 
-const ENVIRONMENTS: Readonly<Record<string, RawPortainerEnvironment>> = JSON.parse(
-  readFileSync(REGISTRY_PATH, 'utf-8'),
-) as Record<string, RawPortainerEnvironment>;
-
-export const ENVIRONMENT_KEYS = Object.keys(ENVIRONMENTS);
+export function listEnvironmentKeys(): string[] {
+  return Object.keys(loadEnvironments());
+}
 
 // Pure lookup taking the registry as a parameter — kept separate from resolveEnvironment below so
 // unit tests can exercise it against a literal fixture registry instead of the real, gitignored
-// environments.json (whose host/stackNamespace identify a real deployment and must never appear
-// as a literal in test source).
+// config.json (whose host/stackNamespace identify a real deployment and must never appear as a
+// literal in test source).
 export function resolveEnvironmentIn(
   registry: Readonly<Record<string, RawPortainerEnvironment>>,
   key: string,
@@ -37,14 +29,14 @@ export function resolveEnvironmentIn(
   const env = registry[key];
   if (!env) {
     throw new Error(
-      `unknown environment "${key}" — registered environments: ${Object.keys(registry).join(', ')} (see environments.json)`,
+      `unknown environment "${key}" — registered environments: ${Object.keys(registry).join(', ')} (see config.json)`,
     );
   }
   return env;
 }
 
 export function resolveEnvironment(key: string): RawPortainerEnvironment {
-  return resolveEnvironmentIn(ENVIRONMENTS, key);
+  return resolveEnvironmentIn(loadEnvironments(), key);
 }
 
 const NULLABLE_FIELDS = ['host', 'endpointId', 'stackNamespace'] as const;
@@ -52,7 +44,7 @@ const NULLABLE_FIELDS = ['host', 'endpointId', 'stackNamespace'] as const;
 /**
  * Asserts every nullable field of an already-resolved environment is actually set — a pure check
  * on a plain object, kept separate from requireConfiguredEnvironment below so it stays testable
- * in isolation even when every real environment in environments.json happens to be fully
+ * in isolation even when every real environment in config.json happens to be fully
  * configured (as both "hml" and "prd" are today) — the gate a new environment entry would need to
  * clear before its real host/endpointId/stackNamespace are known, failing loudly and by name
  * instead of producing a broken URL.
@@ -64,7 +56,7 @@ export function assertFullyConfigured(
   const missing = NULLABLE_FIELDS.filter((field) => env[field] === null);
   if (missing.length > 0) {
     throw new Error(
-      `environment "${key}" is not fully configured yet in environments.json (missing: ${missing.join(', ')})`,
+      `environment "${key}" is not fully configured yet in config.json (missing: ${missing.join(', ')})`,
     );
   }
   return env as ConfiguredPortainerEnvironment;

@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { EnvConfig } from '../../../src/shared/env-config.js';
 import { writeTempEnvFile } from '../../helpers/env-file.js';
 
-const ENV_FILE_VAR = 'CEM_MCP_ENV_FILE';
+const ENV_FILE_VAR = 'POCHETE_MCP_ENV_FILE';
 const originalEnvFileVar = process.env[ENV_FILE_VAR];
 let cleanupCurrent: (() => Promise<void>) | undefined;
 
@@ -25,9 +25,9 @@ afterEach(async () => {
 
 describe('EnvConfig.getRaw', () => {
   it('returns the configured value', async () => {
-    await pointAt({ CEM_SAFE_CURL_AUTH_COOKIE: 'test-cookie-value' });
+    await pointAt({ SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE: 'test-cookie-value' });
 
-    expect(new EnvConfig('safe-curl').getRaw('CEM_SAFE_CURL_AUTH_COOKIE')).toBe(
+    expect(new EnvConfig('safe-curl').getRaw('SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE')).toBe(
       'test-cookie-value',
     );
   });
@@ -35,7 +35,7 @@ describe('EnvConfig.getRaw', () => {
   it('returns undefined for a var absent from the file', async () => {
     await pointAt({});
 
-    expect(new EnvConfig('safe-curl').getRaw('CEM_SAFE_CURL_AUTH_COOKIE')).toBeUndefined();
+    expect(new EnvConfig('safe-curl').getRaw('SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE')).toBeUndefined();
   });
 
   it('treats a missing .env file as fully empty rather than throwing at construction', async () => {
@@ -67,7 +67,7 @@ describe('freshness — no restart, no process.env, no caching', () => {
   });
 });
 
-describe('per-tool path resolution (no CEM_MCP_ENV_FILE override)', () => {
+describe('per-tool path resolution (no POCHETE_MCP_ENV_FILE override)', () => {
   it('resolves to src/tools/<toolName>/.env and tolerates it not existing, rather than throwing', () => {
     delete process.env[ENV_FILE_VAR];
 

@@ -3,11 +3,7 @@ import { z } from 'zod';
 
 import { EnvConfig } from '../../shared/env-config.js';
 import { finalizeToolOutput, OUTPUT_FILE_SHAPE } from '../../shared/tool-output.js';
-import {
-  AUTH_PROFILE_KEYS,
-  resolveAuthCredential,
-  resolveAuthHeaderName,
-} from './auth-profiles.js';
+import { resolveAuthCredential, resolveAuthHeaderName } from './auth-profiles.js';
 import { sendHttpRequest } from './http.js';
 import { parseCurlCommand } from './parse.js';
 import { redactSensitiveHeaders } from './redact.js';
@@ -24,11 +20,12 @@ const INPUT_SHAPE = {
         'rejects the command if any of those headers is present.',
     ),
   authProfile: z
-    .enum(AUTH_PROFILE_KEYS as [string, ...string[]])
+    .string()
+    .min(1)
     .describe(
       'Which registered credential/host profile to use (see auth-profiles.json). No default — ' +
-        'always state it explicitly. Registered profiles: ' +
-        AUTH_PROFILE_KEYS.join(', '),
+        'always state it explicitly. An unregistered value returns an error listing the ' +
+        'profiles actually registered.',
     ),
   ...OUTPUT_FILE_SHAPE,
 };

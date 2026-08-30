@@ -1,5 +1,5 @@
 // Covers bitbucket-open-pr end to end through the real MCP server process — Basic-auth header
-// construction from the "cem" authProfile's registered env vars, the missing-env-var error path,
+// construction from the "example-profile" authProfile's registered env vars, the missing-env-var error path,
 // the unregistered-authProfile error path, and the Bitbucket error-response path — the same
 // "spawn the real server, fake only the external driver" approach as test/e2e/safe-curl.test.ts,
 // with `undici` faked via test/fixtures/fake-undici.mjs (extended with a Bitbucket
@@ -10,6 +10,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { writeTempEnvFile } from '../helpers/env-file.js';
+import { writeTempJsonFile } from '../helpers/json-file.js';
 
 const SERVER_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const CALL_TOOL_MJS = path.join(SERVER_ROOT, 'bin', 'call-tool.mjs');
@@ -23,6 +24,16 @@ const REGISTER_FAKE_DRIVERS = path.join(
 const EMAIL = 'dev@example.com';
 const API_TOKEN = 'test-token-value';
 
+// Injected via POCHETE_BITBUCKET_OPEN_PR_AUTH_PROFILES_FILE into the spawned server process
+// below — the same shape as the real, gitignored auth-profiles.json (see
+// auth-profiles.example.json).
+const FAKE_AUTH_PROFILES = {
+  'example-profile': {
+    emailEnvVar: 'OPEN_PULL_REQUEST_EXAMPLE_PROFILE_EMAIL',
+    apiTokenEnvVar: 'OPEN_PULL_REQUEST_EXAMPLE_PROFILE_API_TOKEN',
+  },
+};
+
 interface CallResult {
   stdout: string;
   stderr: string;
@@ -30,20 +41,29 @@ interface CallResult {
 }
 
 // envOverrides is written to an isolated temp .env file (test/helpers/env-file.ts) that the
-// child is pointed at via CEM_MCP_ENV_FILE — never the real .env, never process.env directly
+// child is pointed at via POCHETE_MCP_ENV_FILE — never the real .env, never process.env directly
 // (EnvConfig reads neither). Passing '' for a var (rather than omitting it) is what simulates
 // "configured but blank", regardless of whether a real .env with this var sits on disk.
 async function callBitbucketOpenPr(
   toolArguments: Record<string, unknown>,
   envOverrides: Record<string, string>,
 ): Promise<CallResult> {
-  const { path: envFile, cleanup } = await writeTempEnvFile(envOverrides);
+  const { path: envFile, cleanup: cleanupEnvFile } = await writeTempEnvFile(envOverrides);
+  const { path: authProfilesFile, cleanup: cleanupAuthProfilesFile } = await writeTempJsonFile(
+    'auth-profiles.json',
+    FAKE_AUTH_PROFILES,
+  );
+  const cleanup = async () => {
+    await cleanupEnvFile();
+    await cleanupAuthProfilesFile();
+  };
   try {
     return await new Promise<CallResult>((resolve, reject) => {
       const env: Record<string, string | undefined> = {
         ...process.env,
         NODE_OPTIONS: `--import ${pathToFileURL(REGISTER_FAKE_DRIVERS).href}`,
-        CEM_MCP_ENV_FILE: envFile,
+        POCHETE_MCP_ENV_FILE: envFile,
+        POCHETE_BITBUCKET_OPEN_PR_AUTH_PROFILES_FILE: authProfilesFile,
       };
 
       const child = spawn(process.execPath, [CALL_TOOL_MJS, 'bitbucket-open-pr'], { env });
@@ -60,7 +80,7 @@ async function callBitbucketOpenPr(
 
       child.stdin.write(
         JSON.stringify({
-          authProfile: 'cem',
+          authProfile: 'example-profile',
           workspace: 'my-workspace',
           repoSlug: 'success-repo',
           title: 'Fix billing rounding',
@@ -77,12 +97,12 @@ async function callBitbucketOpenPr(
 }
 
 const ENV_WITH_CREDENTIALS = {
-  OPEN_PULL_REQUEST_BITBUCKET_EMAIL: EMAIL,
-  OPEN_PULL_REQUEST_BITBUCKET_API_TOKEN: API_TOKEN,
+  OPEN_PULL_REQUEST_EXAMPLE_PROFILE_EMAIL: EMAIL,
+  OPEN_PULL_REQUEST_EXAMPLE_PROFILE_API_TOKEN: API_TOKEN,
 };
 
 describe('bitbucket-open-pr (via call-tool.mjs against the real MCP server)', () => {
-  it('opens a pull request, sending a Basic auth header built from the "cem" profile credentials', async () => {
+  it('opens a pull request, sending a Basic auth header built from the "example-profile" profile credentials', async () => {
     const { stdout, exitCode } = await callBitbucketOpenPr({}, ENV_WITH_CREDENTIALS);
     expect(exitCode).toBe(0);
     const payload = JSON.parse(stdout);
@@ -103,24 +123,24 @@ describe('bitbucket-open-pr (via call-tool.mjs against the real MCP server)', ()
     expect(stderr).toContain('source branch not found');
   });
 
-  it('rejects when the "cem" authProfile email env var is not set, naming it and the profile', async () => {
+  it('rejects when the "example-profile" authProfile email env var is not set, naming it and the profile', async () => {
     const { stderr, exitCode } = await callBitbucketOpenPr(
       {},
-      { ...ENV_WITH_CREDENTIALS, OPEN_PULL_REQUEST_BITBUCKET_EMAIL: '' },
+      { ...ENV_WITH_CREDENTIALS, OPEN_PULL_REQUEST_EXAMPLE_PROFILE_EMAIL: '' },
     );
     expect(exitCode).toBe(1);
-    expect(stderr).toContain('OPEN_PULL_REQUEST_BITBUCKET_EMAIL');
-    expect(stderr).toContain('authProfile "cem"');
+    expect(stderr).toContain('OPEN_PULL_REQUEST_EXAMPLE_PROFILE_EMAIL');
+    expect(stderr).toContain('authProfile "example-profile"');
   });
 
-  it('rejects when the "cem" authProfile API token env var is not set, naming it and the profile', async () => {
+  it('rejects when the "example-profile" authProfile API token env var is not set, naming it and the profile', async () => {
     const { stderr, exitCode } = await callBitbucketOpenPr(
       {},
-      { ...ENV_WITH_CREDENTIALS, OPEN_PULL_REQUEST_BITBUCKET_API_TOKEN: '' },
+      { ...ENV_WITH_CREDENTIALS, OPEN_PULL_REQUEST_EXAMPLE_PROFILE_API_TOKEN: '' },
     );
     expect(exitCode).toBe(1);
-    expect(stderr).toContain('OPEN_PULL_REQUEST_BITBUCKET_API_TOKEN');
-    expect(stderr).toContain('authProfile "cem"');
+    expect(stderr).toContain('OPEN_PULL_REQUEST_EXAMPLE_PROFILE_API_TOKEN');
+    expect(stderr).toContain('authProfile "example-profile"');
   });
 
   it('rejects an unregistered authProfile', async () => {

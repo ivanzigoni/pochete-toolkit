@@ -9,7 +9,7 @@
 // Every test spawns a fresh instance of the real server (via bin/call-tool.mjs -> run.sh -> tsx)
 // with `pg`/`mssql` swapped for the in-memory fakes under test/fixtures/ (no real database), and
 // with the connection details written to an isolated temp .env file (test/helpers/env-file.ts)
-// that the child is pointed at via CEM_MCP_ENV_FILE — never the real .env, never process.env
+// that the child is pointed at via POCHETE_MCP_ENV_FILE — never the real .env, never process.env
 // directly (EnvConfig, src/shared/env-config.ts, reads neither). A case that needs a var to look
 // unset passes '' for it explicitly rather than omitting it — omitting a key means "absent from
 // the file", passing '' means "present but blank"; EnvConfig's required-field check treats both
@@ -20,6 +20,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 import { writeTempEnvFile } from '../helpers/env-file.js';
+import { writeTempJsonFile } from '../helpers/json-file.js';
 
 const SERVER_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const CALL_TOOL_MJS = path.join(SERVER_ROOT, 'bin', 'call-tool.mjs');
@@ -31,7 +32,23 @@ const REGISTER_FAKE_DRIVERS = path.join(
 );
 
 const ENV: Record<string, string> = {
-  SAFE_QUERY_CEM_HML_PASSWORD: 'testpass',
+  SAFE_QUERY_EXAMPLE_CONNECTION_PASSWORD: 'testpass',
+};
+
+// Injected via POCHETE_SAFE_QUERY_CONFIG_FILE into the spawned server process below — the same
+// shape as the real, gitignored config.json (see config.example.json), mirroring the checked-in
+// "example-connection" connection used by test/fixtures/fake-mssql.mjs.
+const FAKE_CONFIG = {
+  connections: {
+    'example-connection': {
+      engine: 'mssql',
+      host: 'db.example.internal',
+      database: 'example_database',
+      user: 'example_user',
+      passwordEnvVar: 'SAFE_QUERY_EXAMPLE_CONNECTION_PASSWORD',
+    },
+  },
+  maskColumns: { partial: [], full: [] },
 };
 
 interface CallResult {
@@ -44,13 +61,22 @@ async function callSafeQuery(
   toolArguments: Record<string, unknown>,
   envOverrides: Record<string, string>,
 ): Promise<CallResult> {
-  const { path: envFile, cleanup } = await writeTempEnvFile(envOverrides);
+  const { path: envFile, cleanup: cleanupEnvFile } = await writeTempEnvFile(envOverrides);
+  const { path: configFile, cleanup: cleanupConfigFile } = await writeTempJsonFile(
+    'config.json',
+    FAKE_CONFIG,
+  );
+  const cleanup = async () => {
+    await cleanupEnvFile();
+    await cleanupConfigFile();
+  };
   try {
     return await new Promise<CallResult>((resolve, reject) => {
       const env: Record<string, string | undefined> = {
         ...process.env,
         NODE_OPTIONS: `--import ${pathToFileURL(REGISTER_FAKE_DRIVERS).href}`,
-        CEM_MCP_ENV_FILE: envFile,
+        POCHETE_MCP_ENV_FILE: envFile,
+        POCHETE_SAFE_QUERY_CONFIG_FILE: configFile,
       };
 
       const child = spawn(process.execPath, [CALL_TOOL_MJS, 'safe-query'], { env });
@@ -65,7 +91,7 @@ async function callSafeQuery(
       child.on('error', reject);
       child.on('close', (exitCode) => resolve({ stdout, stderr, exitCode }));
 
-      child.stdin.write(JSON.stringify({ connection: 'cemiterio_dev', ...toolArguments }));
+      child.stdin.write(JSON.stringify({ connection: 'example-connection', ...toolArguments }));
       child.stdin.end();
     });
   } finally {
@@ -74,11 +100,11 @@ async function callSafeQuery(
 }
 
 describe('safe-query (via call-tool.mjs against the real MCP server)', () => {
-  it('runs a query against the "cemiterio_dev" connection', async () => {
+  it('runs a query against the "example-connection" connection', async () => {
     const { stdout, exitCode } = await callSafeQuery({ query: 'SELECT 1 AS one' }, ENV);
     expect(exitCode).toBe(0);
     const payload = JSON.parse(stdout);
-    expect(payload.connection).toBe('cemiterio_dev');
+    expect(payload.connection).toBe('example-connection');
     expect(payload.engine).toBe('mssql');
     expect(payload.rows).toEqual([{ one: 1 }]);
   });
@@ -86,10 +112,10 @@ describe('safe-query (via call-tool.mjs against the real MCP server)', () => {
   it('rejects the connection if its password var is missing', async () => {
     const { stderr, exitCode } = await callSafeQuery(
       { query: 'SELECT 1' },
-      { ...ENV, SAFE_QUERY_CEM_HML_PASSWORD: '' },
+      { ...ENV, SAFE_QUERY_EXAMPLE_CONNECTION_PASSWORD: '' },
     );
     expect(exitCode).toBe(1);
-    expect(stderr).toContain('SAFE_QUERY_CEM_HML_PASSWORD');
+    expect(stderr).toContain('SAFE_QUERY_EXAMPLE_CONNECTION_PASSWORD');
     expect(stderr).toContain('is not set');
   });
 

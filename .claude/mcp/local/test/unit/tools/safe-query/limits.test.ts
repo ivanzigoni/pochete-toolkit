@@ -6,7 +6,7 @@ import { EnvConfig } from '../../../../src/shared/env-config.js';
 import { resolveSafeQueryLimits } from '../../../../src/tools/safe-query/limits.js';
 import { writeTempEnvFile } from '../../../helpers/env-file.js';
 
-const ENV_FILE_VAR = 'CEM_MCP_ENV_FILE';
+const ENV_FILE_VAR = 'POCHETE_MCP_ENV_FILE';
 const originalEnvFileVar = process.env[ENV_FILE_VAR];
 let cleanupCurrentEnvFile: (() => Promise<void>) | undefined;
 
