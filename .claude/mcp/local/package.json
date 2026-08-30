@@ -1,0 +1,50 @@
+{
+  "name": "local",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Single MCP server hosting this workspace's Claude Code tools (currently: safe-query, ported from the pctk__util__safe-query skill; safe-curl, which parses a pasted curl command and executes it via undici, mechanically rejecting any Cookie/Authorization header the curl itself sets and injecting one instead from the env var registered for the call's authProfile (see src/tools/safe-curl/auth-profiles.json) in this server's own .env, so a real auth cookie never has to appear as a tool argument or in chat; bitbucket-open-pr, which calls the Bitbucket Cloud REST API to open a pull request, authenticating with Basic auth — Atlassian account email + API token — resolved from the env var pair registered for the call's authProfile, same registry pattern as safe-curl's auth-profiles.json but for a credential pair instead of a single cookie; workspace and repoSlug are call arguments, so one authProfile works against any repository the token can reach; portainer-get-container-logs, which reads the raw log stream of a single container (one Swarm service replica, not an aggregate across replicas) from a registered Portainer environment; deepseek-infer, which sends a prompt to the Deepseek chat-completions API and returns its response as plain text, for offloading large-context or high-volume inference work away from the calling session's own context — the API key is injected server-side from this server's own .env, never a tool argument). Every tool also accepts an optional outputFileName (shared src/shared/tool-output.ts) to write its full result to this server's own managed output directory instead of inlining it, for results large enough to flood context.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "start": "tsx src/index.ts",
+    "test": "vitest run",
+    "test:unit": "vitest run test/unit",
+    "test:e2e": "vitest run test/e2e",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint . --ext .ts,.mjs,.cjs",
+    "lint:fix": "eslint . --ext .ts,.mjs,.cjs --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.20.2",
+    "dependency-cruiser": "^16.0.0",
+    "dotenv": "^16.4.7",
+    "madge": "^8.0.0",
+    "mssql": "^12.0.0",
+    "pg": "^8.11.0",
+    "ts-morph": "^24.0.0",
+    "undici": "^8.9.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/madge": "^5.0.3",
+    "@types/mssql": "^12.3.0",
+    "@types/node": "^22.20.1",
+    "@types/pg": "^8.11.0",
+    "@typescript-eslint/eslint-plugin": "^7.18.0",
+    "@typescript-eslint/parser": "^7.18.0",
+    "@vitest/coverage-v8": "^4.1.10",
+    "eslint": "^8.57.1",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-airbnb-typescript": "^18.0.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^3.6.3",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-sonarjs": "^4.2.0",
+    "prettier": "^3.9.6",
+    "tsx": "^4.23.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
+  }
+}

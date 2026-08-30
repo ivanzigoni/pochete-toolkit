@@ -1,0 +1,14 @@
+{
+  "partial": [
+    "email",
+    "telefone",
+    "cpf",
+    "endereco",
+    "nome"
+  ],
+  "full": [
+    "senha",
+    "cartao_credito",
+    "religiao"
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__codegraph__*",
+      "mcp__atlassian__*"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Read|Write|Edit|NotebookEdit|Grep|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-safe-credentials/enforce-safe-credentials.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Write|Edit|NotebookEdit|Glob|Grep|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-path-allowlist/enforce-path-allowlist.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-git-allowlist/enforce-git-allowlist.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "codegraph prompt-hook"
+          }
+        ]
+      }
+    ]
+  }
+}

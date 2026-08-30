@@ -1,0 +1,31 @@
+// A registered environment as it exists on disk in environments.json — host/endpointId/
+// stackNamespace are nullable because an environment (e.g. "prd") can be declared in the schema
+// before its real values are known, the same "declared but not yet configured" shape
+// auth-profiles.json's env vars use (see safe-curl/auth-profiles.ts).
+export interface RawPortainerEnvironment {
+  readonly envVar: string;
+  readonly host: string | null;
+  readonly endpointId: number | null;
+  readonly headerName: string;
+  readonly stackNamespace: string | null;
+}
+
+// Same shape with every nullable field asserted present — what requireConfiguredEnvironment
+// returns after checking, so downstream code never re-checks for null.
+export interface ConfiguredPortainerEnvironment {
+  readonly envVar: string;
+  readonly host: string;
+  readonly endpointId: number;
+  readonly headerName: string;
+  readonly stackNamespace: string;
+}
+
+// Only the fields this tool actually reads from Portainer's container-list response — the real
+// payload carries many more (Image, Mounts, NetworkSettings, ...).
+export interface PortainerContainer {
+  readonly Id: string;
+  readonly Labels?: Record<string, string>;
+  readonly State?: string;
+  readonly Status?: string;
+  readonly Created?: number;
+}

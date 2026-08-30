@@ -1,0 +1,6 @@
+{
+  "example-profile": {
+    "emailEnvVar": "OPEN_PULL_REQUEST_EXAMPLE_PROFILE_EMAIL",
+    "apiTokenEnvVar": "OPEN_PULL_REQUEST_EXAMPLE_PROFILE_API_TOKEN"
+  }
+}

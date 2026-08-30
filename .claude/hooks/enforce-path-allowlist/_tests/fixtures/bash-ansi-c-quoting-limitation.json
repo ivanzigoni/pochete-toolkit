@@ -1,0 +1,1 @@
+{"tool_name":"Bash","cwd":"@PROJECT@","tool_input":{"command":"cat $'\\x2fetc\\x2fpasswd'"}}

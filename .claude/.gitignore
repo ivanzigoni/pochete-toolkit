@@ -1,0 +1,68 @@
+# Local/personal overrides (per README.md convention)
+settings.local.json
+# Dependencies
+node_modules/
+**/node_modules/
+jspm_packages/
+
+# Build output
+dist/
+build/
+out/
+**/dist/
+**/build/
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+**/coverage/
+*.lcov
+.nyc_output/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment/secrets
+.env
+.env.*
+!.env.example
+
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Runtime/scratch
+**/_tmp/*
+!**/_tmp/.gitignore
+*.tmp
+*.temp
+*.pid
+*.seed
+*.pid.lock
+
+# MCP tool output captured by hooks/mcp-output-logger for manual inspection
+output/
+
+# Internal working directories — diretórios versionados, conteúdo ignorado
+__tmp/*
+!__tmp/.gitkeep
+__workdir/*
+!__workdir/.gitkeep
+__stash/*
+!__stash/.gitkeep
+__assets/*
+!__assets/.gitkeep
+

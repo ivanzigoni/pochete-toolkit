@@ -1,0 +1,1 @@
+{"tool_name":"Bash","tool_input":{"command":"git worktree add -b 502-translado _worktrees/502-translado/cem-death-service main"}}

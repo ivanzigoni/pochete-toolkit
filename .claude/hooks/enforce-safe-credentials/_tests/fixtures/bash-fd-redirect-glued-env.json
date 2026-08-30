@@ -1,0 +1,1 @@
+{"tool_name":"Bash","tool_input":{"command":"exec 3<.env; cat <&3"}}

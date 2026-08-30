@@ -1,0 +1,6 @@
+node_modules
+dist
+coverage
+test/fixtures/generate-module-report/**
+test/fixtures/generate-domain-map/**
+test/fixtures/generate-plataforma-endpoint-map/**

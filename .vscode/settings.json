@@ -1,0 +1,9 @@
+{
+  "files.watcherExclude": {
+    "**/.codegraph/**": true,
+    "**/node_modules/**": true
+  },
+  "workbench.editorAssociations": {
+    "*.md": "vscode.markdown.preview.editor"
+  }
+}
