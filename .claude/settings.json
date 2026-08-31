@@ -33,6 +33,15 @@
             "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-git-allowlist/enforce-git-allowlist.sh"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rtk hook claude"
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
