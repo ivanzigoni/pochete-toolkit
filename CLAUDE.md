@@ -12,6 +12,7 @@ carregam sozinhas quando um arquivo daquele tipo é lido ou editado.
 ## Autoria e escopo
 
 @.claude/conventions/agent-anonymity.md
+@.claude/conventions/agent-better-comments.md
 @.claude/conventions/agent-stay-in-root.md
 @.claude/conventions/agent-plan-mode.md
 
