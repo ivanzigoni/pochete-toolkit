@@ -52,6 +52,13 @@ domínio em `DICTIONARY.md` ao longo do tempo, o que melhora a precisão do agen
 
 O fluxo de trabalho usa a estrutura de diretórios com prefixo `_`, dentro de `.claude`.
 
+## Versionamento
+
+A pochete-toolkit segue [Semantic Versioning](https://semver.org/lang/pt-BR/). As tags são
+criadas automaticamente a partir da `main`, via
+[.github/workflows/tag.yml](.github/workflows/tag.yml), com o tipo de bump calculado a partir dos
+conventional commits desde a última tag.
+
 ## Licença
 
 Distribuído sob a licença Apache 2.0. Veja [LICENSE](LICENSE).
