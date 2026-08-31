@@ -1,0 +1,5 @@
+{
+  "example-profile": {
+    "envVar": "SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE"
+  }
+}

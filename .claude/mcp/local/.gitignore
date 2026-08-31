@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+jspm_packages/
+
+# Build output
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Test coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment/secrets — this is where DB credentials for every tool live; never commit it
+.env
+.env.*
+!.env.example
+
+# Domain-specific registry files filled in by hand per workspace (real DB hosts, cookie/profile
+# names, PII masking rules, infra hostnames) — same treatment as .env above: the real file stays
+# local only, the committed counterpart is its *.example.json sibling.
+src/tools/safe-curl/auth-profiles.json
+src/tools/bitbucket-open-pr/auth-profiles.json
+src/tools/safe-query/config.json
+src/tools/portainer-get-container-logs/config.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Runtime/scratch
+*.tmp
+*.temp
+*.pid
+*.seed
+*.pid.lock
+
+# Tool results written via the shared outputFileName mechanism (src/shared/tool-output.ts)
+.tool-output/

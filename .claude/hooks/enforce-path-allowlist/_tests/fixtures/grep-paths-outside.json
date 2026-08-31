@@ -1,0 +1,1 @@
+{"tool_name":"Grep","cwd":"@PROJECT@","tool_input":{"pattern":"TODO","paths":["@PROJECT@","/etc"]}}

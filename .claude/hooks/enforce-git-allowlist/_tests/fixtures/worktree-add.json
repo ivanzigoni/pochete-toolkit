@@ -1,0 +1,1 @@
+{"tool_name":"Bash","tool_input":{"command":"git worktree add -b 123-example-task _worktrees/123-example-task/my-repo main"}}

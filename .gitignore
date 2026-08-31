@@ -1,0 +1,18 @@
+# Repositórios de aplicação — este repo distribui só o workspace do agente, não o código deles.
+# Exceção: o dicionário de domínio vive dentro de project/, mas é workspace do agente, não
+# código de aplicação — DICTIONARY.md fica ignorado (linha abaixo), DICTIONARY.example.md fica
+# versionado normalmente.
+project/*
+!project/DICTIONARY.example.md
+
+# Worktrees git dos repositórios acima, vinculadas a tarefas em .claude/__workdir/
+_worktrees/
+
+# Captura de runtime do Playwright MCP (logs de console, snapshots de página, screenshots)
+.playwright-mcp/
+
+# Dependências e cache de build, instaladas por serviço, nunca versionadas
+node_modules/
+
+# Dicionário de domínio — pessoal, mantido manualmente por cada desenvolvedor, nunca versionado
+DICTIONARY.md

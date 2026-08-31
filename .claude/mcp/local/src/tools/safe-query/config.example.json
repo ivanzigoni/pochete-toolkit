@@ -1,0 +1,15 @@
+{
+  "connections": {
+    "example-connection": {
+      "engine": "postgres",
+      "host": "db.example.internal",
+      "database": "example_database",
+      "user": "example_user",
+      "passwordEnvVar": "SAFE_QUERY_EXAMPLE_CONNECTION_PASSWORD"
+    }
+  },
+  "maskColumns": {
+    "partial": ["email", "telefone", "cpf", "endereco", "nome"],
+    "full": ["senha", "cartao_credito", "religiao"]
+  }
+}
