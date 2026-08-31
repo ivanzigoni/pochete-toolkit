@@ -7,28 +7,28 @@ carregam sozinhas quando um arquivo daquele tipo é lido ou editado.
 
 ## Comunicação
 
-@.claude/conventions/agent-tone-of-voice.md
+@.claude/conventions/pctk__agent-tone-of-voice.md
 
 ## Autoria e escopo
 
-@.claude/conventions/agent-anonymity.md
-@.claude/conventions/agent-better-comments.md
-@.claude/conventions/agent-stay-in-root.md
-@.claude/conventions/agent-plan-mode.md
+@.claude/conventions/pctk__agent-anonymity.md
+@.claude/conventions/pctk__agent-better-comments.md
+@.claude/conventions/pctk__agent-stay-in-root.md
+@.claude/conventions/pctk__agent-plan-mode.md
 
 ## Padrão de código
 
-@.claude/conventions/agent-enterprise.md
+@.claude/conventions/pctk__agent-enterprise.md
 
 ## Git
 
-@.claude/conventions/agent-git.md
+@.claude/conventions/pctk__agent-git.md
+
+## Extensões do usuário
+
+@.claude/conventions/pctk__agent-user-extensions.md
+@.claude/conventions/user__index.md
 
 ## Dicionário de domínio
 
-Termos e jargão específicos deste workspace, mantidos manualmente pelo desenvolvedor em
-`project/DICTIONARY.md` (gitignored, nunca escrito por inferência do agente). Ver
-`project/DICTIONARY.example.md` para o formato — copiar para `project/DICTIONARY.md` antes de
-popular.
-
-@project/DICTIONARY.md
+@.claude/dictionary/index.md

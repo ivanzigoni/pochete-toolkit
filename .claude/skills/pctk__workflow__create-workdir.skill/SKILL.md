@@ -13,7 +13,7 @@ instruction doesn't name a repository, this skill does not guess one from contex
 sibling to `.claude/` at the workspace root — never anywhere else, never typed ad hoc.
 
 **Branch naming:** this skill has no opinion of its own on git — it follows
-`.claude/conventions/agent-git.md` (bloco 2, conventional branches) by default: propose the name already formatted as
+`.claude/conventions/pctk__agent-git.md` (bloco 2, conventional branches) by default: propose the name already formatted as
 `<type>/<descricao-curta-kebab-case>` for each repository named in the instruction, rather than
 asking in the open. Never assume the branch name equals the task name. Only use a different name
 when the human explicitly asks for one in that turn — silence is not confirmation, but an explicit

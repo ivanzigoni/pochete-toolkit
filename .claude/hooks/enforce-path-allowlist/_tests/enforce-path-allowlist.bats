@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 #
 # Covers enforce-path-allowlist.sh's own logic — the opt-in filesystem-scope guard replacing
-# CLAUDE.md's purely textual stay-in-root guidance (.claude/conventions/agent-stay-in-root.md) with a
+# CLAUDE.md's purely textual stay-in-root guidance (.claude/conventions/pctk__agent-stay-in-root.md) with a
 # real PreToolUse deny.
 #
 # This hook's allowed roots are user- and session-specific (HOME, CLAUDE_PROJECT_DIR,

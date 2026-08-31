@@ -40,7 +40,7 @@ listados porque são o padrão mais comum e o mais fácil de racionalizar como "
 
 ## Onde a informação vai, já que não vai pro código
 
-Corpo da mensagem de commit (conforme `.claude/conventions/agent-git.md`), descrição de pull
+Corpo da mensagem de commit (conforme `.claude/conventions/pctk__agent-git.md`), descrição de pull
 request, ou a estrutura da própria task em `.claude/__workdir/<task>/`. Esses três lugares são
 descartáveis e nunca herdados por quem consome só o código-fonte — é exatamente onde esse tipo de
 informação deve viver.

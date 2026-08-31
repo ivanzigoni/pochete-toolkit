@@ -1,9 +1,5 @@
 # Repositórios de aplicação — este repo distribui só o workspace do agente, não o código deles.
-# Exceção: o dicionário de domínio vive dentro de project/, mas é workspace do agente, não
-# código de aplicação — DICTIONARY.md fica ignorado (linha abaixo), DICTIONARY.example.md fica
-# versionado normalmente.
 project/*
-!project/DICTIONARY.example.md
 
 # Worktrees git dos repositórios acima, vinculadas a tarefas em .claude/__workdir/
 _worktrees/
@@ -14,5 +10,21 @@ _worktrees/
 # Dependências e cache de build, instaladas por serviço, nunca versionadas
 node_modules/
 
-# Dicionário de domínio — pessoal, mantido manualmente por cada desenvolvedor, nunca versionado
-DICTIONARY.md
+# Dicionário de domínio pessoal, incluindo o entrypoint index.md que agrega os arquivos de
+# vocabulário no CLAUDE.md compartilhado via import aninhado. index.example.md é o único arquivo
+# deste diretório que fica versionado, como modelo.
+.claude/dictionary/*
+!.claude/dictionary/index.example.md
+
+# Skills de domínio criadas por quem usa a pochete-toolkit — específicas do workspace de cada
+# usuário, nunca parte do framework distribuído.
+.claude/skills/user__*/
+
+# Rules de domínio pessoal — mesma lógica das skills acima, mas para .claude/rules/.
+.claude/rules/user__*.md
+
+# Conventions pessoais do desenvolvedor, incluindo o entrypoint user__index.md que as agrega no
+# CLAUDE.md compartilhado via import aninhado. user__index.example.md é o único arquivo deste
+# padrão que fica versionado, como modelo.
+.claude/conventions/user__*.md
+!.claude/conventions/user__index.example.md
