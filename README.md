@@ -23,6 +23,20 @@ Com a pochete-toolkit, você e seu agente ganham visibilidade sobre:
   - Runtime, via safe-query, com consulta segura e anonimizada conforme a Lei Geral de Proteção de
     Dados (LGPD).
 
+## Ferramentas
+
+A pochete-toolkit dá ao agente capacidades adicionais: mais fontes de contexto para as tarefas
+que ele executa, diretamente ou delegadas a um subagente. Grande parte desse contexto vem de
+fontes externas ao código-fonte e complementa a decisão tanto do agente quanto do humano, durante a tarefa.
+
+| Ferramenta | O que faz |
+|---|---|
+| `bitbucket-open-pr` | Abre um pull request no Bitbucket. |
+| `delegate-reasoning` | Expõe modelos de linguagem externos via HTTP, indicado para economia de tokens e paralelização de tarefas. |
+| `portainer-get-container-logs` | Obtém logs em tempo real de containers de serviços no Portainer, para diagnóstico de problemas em produção e testes E2E. |
+| `safe-curl` | Executa requisições curl autenticadas. |
+| `safe-query` | Executa consultas SQL somente leitura, com uma camada de redação de dados sensíveis conforme a LGPD. |
+
 ## Segurança
 
 A pochete-toolkit segue os princípios da filosofia zero trust: aplica opt-in por meio de allowlists tanto para a navegação entre diretórios quanto para os comandos de git permitidos.
