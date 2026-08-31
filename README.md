@@ -42,11 +42,34 @@ fontes externas ao código-fonte e complementa a decisão tanto do agente quanto
 | `safe-curl` | Executa requisições curl autenticadas. |
 | `safe-query` | Executa consultas SQL somente leitura, com uma camada de redação de dados sensíveis conforme a LGPD. |
 
-## Segurança
+## Instalação
 
-A pochete-toolkit segue os princípios da filosofia zero trust: aplica opt-in por meio de allowlists tanto para a navegação entre diretórios quanto para os comandos de git permitidos.
+### Onde colocar os projetos
 
-A pochete-toolkit bloqueia comportamentos indesejados de forma mecânica. O agente não consegue ler arquivos .env, chaves de API, arquivos de credenciais e senhas, nem outros artefatos sensíveis relacionados à autenticação.
+Clone cada repositório de aplicação dentro do diretório `project/`, um por subdiretório — por
+exemplo, `project/meu-servico/`. Esse diretório fica fora do controle de versão deste repositório
+(veja `.gitignore`): a pochete-toolkit distribui só o workspace do agente, não o código das suas
+aplicações.
+
+Se o seu projeto tiver vários repositórios, clone todos dentro de `project/`, lado a lado. Veja
+"Projetos com vários repositórios", abaixo, para como o agente acumula conhecimento de domínio
+entre eles.
+
+### Instalar o RTK
+
+O RTK (rtk-ai/rtk) reduz o volume de tokens gasto pelo agente ao filtrar e compactar a saída de
+comandos executados no terminal. O hook que ativa esse comportamento e os filtros do projeto já
+vêm versionados neste repositório — falta só instalar o binário na sua máquina.
+
+Escolha um dos métodos oficiais:
+
+- Instalação rápida (Linux/macOS): `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh`
+- Homebrew (macOS/Linux): `brew install rtk-ai/tap/rtk`
+- Cargo, se você já tem o toolchain Rust: `cargo install --git https://github.com/rtk-ai/rtk --branch master rtk`
+
+Confirme a instalação com `rtk --version`. Não é preciso rodar nenhum comando de configuração
+adicional: assim que o binário estiver no PATH, o Claude Code passa a usar o RTK automaticamente
+nas próximas sessões abertas neste repositório.
 
 ## Projetos com vários repositórios
 
@@ -56,6 +79,12 @@ domínio em `DICTIONARY.md` ao longo do tempo, o que melhora a precisão do agen
 ## Fluxo de trabalho
 
 O fluxo de trabalho usa a estrutura de diretórios com prefixo `_`, dentro de `.claude`.
+
+## Segurança
+
+A pochete-toolkit segue os princípios da filosofia zero trust: aplica opt-in por meio de allowlists tanto para a navegação entre diretórios quanto para os comandos de git permitidos.
+
+A pochete-toolkit bloqueia comportamentos indesejados de forma mecânica. O agente não consegue ler arquivos .env, chaves de API, arquivos de credenciais e senhas, nem outros artefatos sensíveis relacionados à autenticação.
 
 ## Licença
 
