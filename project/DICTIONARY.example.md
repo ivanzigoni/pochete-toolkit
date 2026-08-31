@@ -1,2 +1,0 @@
-# Dicionário de domínio
-

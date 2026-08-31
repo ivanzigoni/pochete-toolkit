@@ -2,7 +2,7 @@
 #
 # PreToolUse guard: mechanically denies any filesystem-touching tool call (Read, Write, Edit,
 # NotebookEdit, Glob, Grep, Bash) whose target resolves outside a small set of allowed roots —
-# replacing the purely textual guidance in CLAUDE.md (.claude/conventions/agent-stay-in-root.md) with a
+# replacing the purely textual guidance in CLAUDE.md (.claude/conventions/pctk__agent-stay-in-root.md) with a
 # real deny. Opt-in
 # model, not opt-out: nothing outside the allowed roots is visible unless a human explicitly adds
 # it.

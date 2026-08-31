@@ -5,7 +5,7 @@ paths:
 
 # Convenções JavaScript/TypeScript
 
-`safe-javascript.md` e `safe-typescript.md` estabelecem uma postura de segurança (boundary,
+`pctk__safe-javascript.md` e `pctk__safe-typescript.md` estabelecem uma postura de segurança (boundary,
 vouching, strictness, loud failure), válida para qualquer projeto na linguagem, com ou sem
 tipos. Este arquivo trata de outra coisa: escolhas de biblioteca e de estilo já tomadas para
 não serem retomadas a cada sessão — qual lib resolve qual categoria de problema, o que nunca
