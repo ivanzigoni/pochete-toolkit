@@ -8,12 +8,12 @@
 # JSON payload on stdin (no CLI flags — nothing here is meant for a human to type) and responds on
 # stdout with either nothing (allow) or a hook-output object with permissionDecision: "deny".
 #
-# Read/Write/Edit check the single structured tool_input.file_path. NotebookEdit and Grep were
-# added later, once enforce-path-allowlist's research into the Claude Code hooks docs turned up
-# that they carry their target under different field names — NotebookEdit under tool_input.path,
-# Grep under tool_input.paths (an array) — rather than file_path; each is checked with the same
-# classify_path used everywhere else, just extracted from its own field. Glob is deliberately left
-# unmatched: its hook payload carries only "pattern", no path field, so there is nothing to check.
+# Read/Write/Edit check the single structured tool_input.file_path. NotebookEdit and Grep carry
+# their target under different field names per the Claude Code hooks docs — NotebookEdit under
+# tool_input.path, Grep under tool_input.paths (an array) — rather than file_path; each is checked
+# with the same classify_path used everywhere else, just extracted from its own field. Glob is
+# deliberately left unmatched: its hook payload carries only "pattern", no path field, so there is
+# nothing to check.
 #
 # The Bash-tool path has no structured field at all — a shell command is free text — so it's
 # tokenized on whitespace (with globbing disabled during that split, so a `*` in the scanned
@@ -25,7 +25,13 @@
 # ~/.aws/credentials`) that would otherwise bypass this guard entirely just by using Bash instead
 # of a structured tool. It also de-globs each token's flag value (`--include=*.env*` -> `.env`)
 # and re-classifies the result, catching a search command aimed at a credential-family file via
-# wildcard instead of an exact name (see check_bash_command).
+# wildcard instead of an exact name (see check_bash_command). check_bash_command additionally
+# recognizes grep-family commands that recurse into a directory (grep/egrep/fgrep with an explicit
+# -r/-R/--recursive flag, or rg/ag/ack which recurse by default) and, for each directory argument
+# they're given, walks that directory looking for a credential-family file before allowing the
+# command through -- see is_recursive_grep_command/scan_dir_for_credential_file. `find <dir> -exec
+# cat {} \;` and `git grep` reach the same nested content through a shape this heuristic doesn't
+# recognize (see the BYPASS tests for both).
 set -euo pipefail
 IFS=$'\n\t'
 unset CDPATH
@@ -51,6 +57,15 @@ readonly GCLOUD_PATH_RE='(^|/)\.config/gcloud(/|$)'
 readonly GCP_SERVICE_ACCOUNT_RE='service[_-]?account.*\.json$'
 # Private certificate/key container extensions.
 readonly CERT_EXT_RE='\.(pfx|p12|pem|key|jks|keystore)$'
+
+# grep-family commands that recurse into a directory by default, no flag needed.
+readonly RECURSIVE_ALWAYS_CMD_RE='^(rg|ripgrep|ag|ack|ack-grep)$'
+# grep-family commands that only recurse with an explicit -r/-R/--recursive flag.
+readonly RECURSIVE_FLAGGED_CMD_RE='^(grep|egrep|fgrep)$'
+# Matches a bundled short flag containing r/R (-r, -rn, -nr, -rlI, ...) or the long form
+# (--recursive). A leading double-dash never matches the short-bundle half of this alternation,
+# since its second character is `-`, not one of `[a-zA-Z]`.
+readonly RECURSIVE_FLAG_RE='^-[a-zA-Z]*[rR][a-zA-Z]*$|^--recursive$'
 
 log_error() { printf '%s: %s\n' "$SCRIPT_NAME" "$*" >&2; }
 
@@ -111,6 +126,51 @@ classify_path() {
     return 0
 }
 
+# True if this Bash command's token list invokes a grep-family command in a shape that recurses
+# into a directory: rg/ag/ack (recursive by default) anywhere in the tokens, or grep/egrep/fgrep
+# together with a -r/-R/--recursive-shaped flag anywhere in the tokens. Deliberately checks every
+# token, not just tokens[0], so `sudo grep -r ...` or `time grep -r ...` still match -- resolving
+# the real argv[0] would need actual shell parsing, out of scope for this best-effort scanner.
+# That looseness runs both ways: a command that merely mentions "grep -r" as prose (inside an
+# unrelated echo, say) can false-positive here. Consistent with the rest of this file, an
+# over-block is the accepted failure mode over an under-block.
+is_recursive_grep_command() {
+    local -n _tokens="$1"
+    local tok base
+    local has_always_recursive_cmd=0 has_flagged_cmd=0 has_recursive_flag=0
+
+    for tok in "${_tokens[@]}"; do
+        base=$(basename -- "$tok")
+        [[ "$base" =~ $RECURSIVE_ALWAYS_CMD_RE ]] && has_always_recursive_cmd=1
+        [[ "$base" =~ $RECURSIVE_FLAGGED_CMD_RE ]] && has_flagged_cmd=1
+        [[ "$tok" =~ $RECURSIVE_FLAG_RE ]] && has_recursive_flag=1
+    done
+
+    (( has_always_recursive_cmd == 1 )) && return 0
+    (( has_flagged_cmd == 1 && has_recursive_flag == 1 )) && return 0
+    return 1
+}
+
+# Walks a directory tree for the first file classify_path considers a credential file, and prints
+# its reason (or nothing, on a clean tree) -- an existence check, not an enumeration, so it stops
+# at the first hit instead of walking a large tree (node_modules, say) to completion. Reuses
+# classify_path itself rather than a second copy of its patterns, so the .env.example/.env.sample
+# exemption and every other rule stay in exactly one place. Symlinks are not followed (`find`'s
+# default `-type f` matches the link's own type, not what it points at) -- that's the same gap the
+# BYPASS tests above already document for Read, not a new one introduced here.
+scan_dir_for_credential_file() {
+    local dir="$1" file base reason
+    while IFS= read -r -d '' file; do
+        base=$(basename -- "$file")
+        reason=$(classify_path "$file" "$base")
+        if [[ -n "$reason" ]]; then
+            printf '%s' "$reason"
+            return 0
+        fi
+    done < <(find "$dir" -type f -print0 2>/dev/null)
+    return 0
+}
+
 # Scans a Bash command's arguments for a credential-looking path and denies on the first match.
 # Tokenizes on whitespace with globbing disabled (`set -f`) so a `*`/`?`/`[...]` in the scanned
 # command is treated as a literal character, never expanded against this process's real
@@ -128,6 +188,9 @@ check_bash_command() {
     tokens=( $command )
     set +f
 
+    local recursive_command=0
+    is_recursive_grep_command tokens && recursive_command=1
+
     local tok stripped base reason value deglobbed glob_base glob_reason
     for tok in "${tokens[@]}"; do
         stripped=$(tr -d "$STRIP_CHARS" <<<"$tok")
@@ -136,6 +199,13 @@ check_bash_command() {
         reason=$(classify_path "$stripped" "$base")
         if [[ -n "$reason" ]]; then
             deny "Blocked by enforce-safe-credentials: $reason — cannot be read or written via Bash either (matched argument: $stripped)."
+        fi
+
+        if (( recursive_command == 1 )) && [[ -d "$stripped" ]]; then
+            reason=$(scan_dir_for_credential_file "$stripped")
+            if [[ -n "$reason" ]]; then
+                deny "Blocked by enforce-safe-credentials: this command recurses into a directory containing $reason — a recursive search can echo its content into the match output even though no argument named it directly (matched directory: $stripped)."
+            fi
         fi
 
         # A token can be safe as a literal path yet still be a glob pattern (a grep/find
@@ -192,15 +262,15 @@ main() {
             ;;
         NotebookEdit)
             # NotebookEdit carries its target under tool_input.path, not file_path — a different
-            # field name than Read/Write/Edit, confirmed against the Claude Code hooks docs.
+            # field name than Read/Write/Edit, per the Claude Code hooks docs.
             local nb_path
             nb_path=$(jq -r '.tool_input.path // empty' <<<"$input" 2>/dev/null) || nb_path=""
             check_path_and_deny "$nb_path"
             exit 0
             ;;
         Grep)
-            # Grep carries tool_input.paths as an array (plural), unlike every other tool here —
-            # also confirmed against the hooks docs, not inferred from the tool's name.
+            # Grep carries tool_input.paths as an array (plural), unlike every other tool here,
+            # per the Claude Code hooks docs.
             local paths_list p
             paths_list=$(jq -r '.tool_input.paths // [] | .[]?' <<<"$input" 2>/dev/null) || paths_list=""
             if [[ -n "$paths_list" ]]; then
@@ -212,13 +282,12 @@ main() {
             ;;
     esac
 
-    # Read/Write/Edit, or tool_name absent — the latter kept so payloads without a tool_name field
-    # (as used by this hook's pre-Bash-support fixtures) still get the file_path check. All three
-    # tools carry the same tool_input.file_path shape, so no per-tool branching is needed here.
+    # Read/Write/Edit, or tool_name absent — the latter kept so a payload without a tool_name
+    # field still gets the file_path check. All three tools carry the same tool_input.file_path
+    # shape, so no per-tool branching is needed here.
     #
     # Glob is deliberately NOT handled: its hook payload carries only "pattern", no path field per
-    # the Claude Code hooks docs, so there is nothing here to extract or check — same conclusion
-    # already reached for enforce-path-allowlist.
+    # the Claude Code hooks docs, so there is nothing here to extract or check.
     local path
     path=$(jq -r '.tool_input.file_path // empty' <<<"$input" 2>/dev/null) || path=""
     check_path_and_deny "$path"
