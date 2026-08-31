@@ -1,28 +1,21 @@
 #!/usr/bin/env bats
 #
-# Covers enforce-safe-credentials.sh's own logic — JSON parsing off stdin, the .env pattern match, the
-# .env.example/.env.sample allowlist, AWS/.aws, Azure/.azure, and gcloud/.config/gcloud path
+# Covers enforce-safe-credentials.sh's own logic — JSON parsing off stdin, the .env pattern match,
+# the .env.example/.env.sample allowlist, AWS/.aws, Azure/.azure, and gcloud/.config/gcloud path
 # matching, GCP service-account key filename matching, private cert/key extension matching,
 # missing-dependency fail-open, and malformed-input safety. Fixtures live under _tests/fixtures/
-# rather than heredoc'd inline, per _skills/ivan:create_script's fixture rule. This hook was
-# renamed from env-read-guard when AWS/Azure/GCP credential paths and cert/key extensions were
-# added to it — the .env-only test cases below are carried over unchanged from that suite.
+# rather than heredoc'd inline.
 #
-# Also covers the Bash-tool path added later: the same credential-path patterns, but scanned out
-# of tool_input.command (free text) instead of the Read tool's structured tool_input.file_path —
-# added because a matcher scoped to "Read" only left `Bash("cat .env")` completely unguarded.
+# Covers the Bash-tool path too: the same credential-path patterns, scanned out of
+# tool_input.command (free text) instead of the Read tool's structured tool_input.file_path.
 #
-# Also covers the Write/Edit-tool path added later, once the matcher was extended from "Read|Bash"
-# to "Read|Write|Edit|Bash": every existing pattern above is now enforced on write too, not just
-# read.
+# Covers Write/Edit as well as Read: every pattern above is enforced on write, not just read.
 #
-# Pentest additions (see plan discussed with Ivan on 2026-08-06): mechanical bypasses an agent
-# could try against classify_path's naive basename-regex matching and check_bash_command's
-# whitespace tokenizer. Tests prefixed "BYPASS:" document a gap that currently succeeds (the hook
-# ALLOWS a call that reaches the same credential content a blocked call would) — they exist to
-# make the gap visible and regression-detectable, not because the gap is expected to close on its
-# own. Tests prefixed "CONTROL:" sit right next to a bypass to mark the exact boundary where the
-# same technique, with one small difference (e.g. a space), IS caught.
+# Tests prefixed "BYPASS:" document a gap that currently succeeds (the hook ALLOWS a call that
+# reaches the same credential content a blocked call would) — they exist to make the gap visible
+# and regression-detectable, not because the gap is expected to close on its own. Tests prefixed
+# "CONTROL:" sit right next to a bypass to mark the exact boundary where the same technique, with
+# one small difference (e.g. a space), IS caught.
 
 bats_require_minimum_version 1.5.0
 
@@ -279,9 +272,9 @@ deny_json() {
     [ -z "$output" ]
 }
 
-# --- blocks Write/Edit too, not just Read (matcher extended to Read|Write|Edit|Bash) -------------
+# --- blocks Write/Edit as well as Read -----------------------------------------------------------
 
-@test "blocks Write to .env (every existing pattern is now also enforced on write, not just read)" {
+@test "blocks Write to a .env-family file" {
     run bash -c "$SCRIPT < '$FIXTURES/write-env.json'"
     [ "$status" -eq 0 ]
     deny_json "$output"
@@ -405,6 +398,106 @@ deny_json() {
     run bash -c "$SCRIPT < '$FIXTURES/bash-python-oneliner-spaced-env.json'"
     [ "$status" -eq 0 ]
     deny_json "$output"
+}
+
+# --- Bash tool: grep-family commands that recurse into a directory -----------------------------
+#
+# `grep -rn PATTERN some/dir` reads and can echo the content of every file under that directory,
+# including a nested .env, without any single argument ever spelling out a credential-looking
+# basename on its own — classify_path alone never sees one. These build real tmpdirs (the
+# directory has to actually exist on disk for the `-d` check below to fire), same pattern as the
+# symlink/hardlink BYPASS tests above.
+
+@test "blocks 'grep -rn PATTERN <dir>' when the directory has a nested .env" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/nested"
+    printf 'DEEPSEEK_API_KEY=should-not-leak\n' > "$tmpdir/nested/.env"
+    payload=$(jq -n --arg cmd "grep -rn DEEPSEEK_ $tmpdir" '{tool_name:"Bash", tool_input:{command:$cmd}}')
+
+    run bash -c "$SCRIPT <<< '$payload'"
+    rm -rf "$tmpdir"
+
+    [ "$status" -eq 0 ]
+    deny_json "$output"
+    [[ "$output" == *".env"* ]]
+}
+
+@test "blocks 'rg PATTERN <dir>' (recursive by default, no -r needed) when the directory has a nested .env" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/a/b"
+    printf 'TOKEN=leaked\n' > "$tmpdir/a/b/.env"
+    payload=$(jq -n --arg cmd "rg TOKEN $tmpdir" '{tool_name:"Bash", tool_input:{command:$cmd}}')
+
+    run bash -c "$SCRIPT <<< '$payload'"
+    rm -rf "$tmpdir"
+
+    [ "$status" -eq 0 ]
+    deny_json "$output"
+}
+
+@test "blocks a bundled short flag ('-rn', not bare '-r') as still meaning recursive" {
+    tmpdir="$(mktemp -d)"
+    printf 'SECRET=leaked\n' > "$tmpdir/.env"
+    payload=$(jq -n --arg cmd "grep -rn foo $tmpdir" '{tool_name:"Bash", tool_input:{command:$cmd}}')
+
+    run bash -c "$SCRIPT <<< '$payload'"
+    rm -rf "$tmpdir"
+
+    [ "$status" -eq 0 ]
+    deny_json "$output"
+}
+
+@test "CONTROL: 'grep -rn PATTERN <dir>' is allowed when the directory has no credential-family file" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/nested"
+    printf 'just some text\n' > "$tmpdir/nested/notes.txt"
+    payload=$(jq -n --arg cmd "grep -rn PATTERN $tmpdir" '{tool_name:"Bash", tool_input:{command:$cmd}}')
+
+    run bash -c "$SCRIPT <<< '$payload'"
+    rm -rf "$tmpdir"
+
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "CONTROL: 'grep PATTERN <dir>' without a recursive flag is allowed even with a nested .env (grep itself would skip the directory)" {
+    tmpdir="$(mktemp -d)"
+    mkdir -p "$tmpdir/nested"
+    printf 'SECRET=leaked\n' > "$tmpdir/nested/.env"
+    payload=$(jq -n --arg cmd "grep PATTERN $tmpdir" '{tool_name:"Bash", tool_input:{command:$cmd}}')
+
+    run bash -c "$SCRIPT <<< '$payload'"
+    rm -rf "$tmpdir"
+
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+# --- BYPASS: the recursive-grep directory scan is still a mechanical heuristic, not a shell
+# parser or a process monitor — it only recognizes a fixed list of grep-family command names.
+
+@test "BYPASS: 'find <dir> -exec cat {} ;' still reads a nested credential file unchecked (not a grep-family command)" {
+    tmpdir="$(mktemp -d)"
+    printf 'SECRET=leaked\n' > "$tmpdir/.env"
+    payload=$(jq -n --arg cmd "find $tmpdir -type f -exec cat {} ;" '{tool_name:"Bash", tool_input:{command:$cmd}}')
+
+    run bash -c "$SCRIPT <<< '$payload'"
+    rm -rf "$tmpdir"
+
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
+}
+
+@test "BYPASS: 'git grep PATTERN <dir>' recurses by default (no -r flag) and is not recognized as an always-recursive command" {
+    tmpdir="$(mktemp -d)"
+    printf 'SECRET=leaked\n' > "$tmpdir/.env"
+    payload=$(jq -n --arg cmd "git grep PATTERN $tmpdir" '{tool_name:"Bash", tool_input:{command:$cmd}}')
+
+    run bash -c "$SCRIPT <<< '$payload'"
+    rm -rf "$tmpdir"
+
+    [ "$status" -eq 0 ]
+    [ -z "$output" ]
 }
 
 # --- NotebookEdit: tool_input.path, not file_path ------------------------------------------------
