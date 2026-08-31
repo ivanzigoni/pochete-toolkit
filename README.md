@@ -2,6 +2,11 @@
 
 # pochete-toolkit
 
+[![Última release](https://img.shields.io/github/v/release/ivanzigoni/pochete-toolkit)](https://github.com/ivanzigoni/pochete-toolkit/releases)
+[![Licença](https://img.shields.io/github/license/ivanzigoni/pochete-toolkit)](LICENSE)
+[![Status do workflow de tag](https://img.shields.io/github/actions/workflow/status/ivanzigoni/pochete-toolkit/tag.yml)](https://github.com/ivanzigoni/pochete-toolkit/actions/workflows/tag.yml)
+[![Data da última release](https://img.shields.io/github/release-date/ivanzigoni/pochete-toolkit)](https://github.com/ivanzigoni/pochete-toolkit/releases)
+
 A pochete-toolkit é uma biblioteca (quase) não opinativa, criada para quem pratica codificação
 agêntica com o Claude Code. Ela não impõe como você organiza seu conhecimento, seus processos ou
 seu jeito de trabalhar. Em vez disso, oferece uma estrutura generalista que apoia em duas frentes:
@@ -51,13 +56,6 @@ domínio em `DICTIONARY.md` ao longo do tempo, o que melhora a precisão do agen
 ## Fluxo de trabalho
 
 O fluxo de trabalho usa a estrutura de diretórios com prefixo `_`, dentro de `.claude`.
-
-## Versionamento
-
-A pochete-toolkit segue [Semantic Versioning](https://semver.org/lang/pt-BR/). As tags são
-criadas automaticamente a partir da `main`, via
-[.github/workflows/tag.yml](.github/workflows/tag.yml), com o tipo de bump calculado a partir dos
-conventional commits desde a última tag.
 
 ## Licença
 
