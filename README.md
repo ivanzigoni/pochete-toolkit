@@ -74,7 +74,18 @@ nas próximas sessões abertas neste repositório.
 ## Projetos com vários repositórios
 
 A pochete-toolkit funciona bem em projetos com vários repositórios. Você acumula conhecimento de
-domínio em `DICTIONARY.md` ao longo do tempo, o que melhora a precisão do agente.
+domínio em `.claude/dictionary/` ao longo do tempo, o que melhora a precisão do agente.
+
+## Extensões de domínio
+
+A pochete-toolkit distribui suas próprias skills e rules com prefixo `pctk__` e suas próprias
+conventions com prefixo `pctk__agent-` (versionadas, mantidas pelo framework). Você pode criar as
+três coisas com conteúdo específico do domínio de negócio do seu workspace, usando prefixo
+`user__` — path exato, mecanismo de descoberta e passo a passo para conventions em
+`.claude/conventions/pctk__agent-user-extensions.md`.
+
+Tudo isso fica automaticamente fora do controle de versão deste repositório (veja `.gitignore`),
+sem nenhuma configuração adicional.
 
 ## Fluxo de trabalho
 
