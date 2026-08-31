@@ -25,7 +25,7 @@ export function buildDeepseekInferRequest(
 
   return {
     method: 'POST',
-    url: `${baseUrl ?? DEFAULT_BASE_URL}${CHAT_COMPLETIONS_PATH}`,
+    url: `${baseUrl || DEFAULT_BASE_URL}${CHAT_COMPLETIONS_PATH}`,
     headers: {
       Authorization: `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
