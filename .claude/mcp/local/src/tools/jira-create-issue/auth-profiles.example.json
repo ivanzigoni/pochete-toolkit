@@ -1,0 +1,7 @@
+{
+  "example-profile": {
+    "siteUrl": "https://your-domain.atlassian.net",
+    "emailEnvVar": "JIRA_CREATE_ISSUE_EXAMPLE_PROFILE_EMAIL",
+    "apiTokenEnvVar": "JIRA_CREATE_ISSUE_EXAMPLE_PROFILE_API_TOKEN"
+  }
+}

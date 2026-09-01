@@ -14,12 +14,21 @@
 // repoSlug to simulate a success/failure response without a real Bitbucket account. The Portainer
 // endpoints gate on a fixed X-API-Key value the same way, and the logs endpoint returns a real
 // Docker-framed byte body (via arrayBuffer(), never valid UTF-8 text) so the e2e suite exercises
-// the same raw-byte demuxing path production traffic does.
+// the same raw-byte demuxing path production traffic does. The Jira endpoints (JIRA_FAKE_SITE)
+// gate on a Basic Authorization header the same way, and branch on issue key ("ABC-404" for a
+// 404) or on jql/nextPageToken to exercise the error path and pagination without a real Jira site.
 
 const ECHO_URL = 'https://example.test/echo';
 const SET_COOKIE_URL = 'https://example.test/set-cookie';
 const BITBUCKET_API_ROOT = 'https://api.bitbucket.org/2.0/repositories/';
 const DEEPSEEK_CHAT_COMPLETIONS_URL = 'https://api.deepseek.com/chat/completions';
+
+// Fixture-only Jira Cloud site, mirrored as a local constant (same name) in each of
+// jira-get-issue/jira-add-comment/jira-search-issues' e2e suites — never a real Jira tenant.
+const JIRA_FAKE_SITE = 'https://fake-jira.example.test';
+const JIRA_ISSUE_ROOT = `${JIRA_FAKE_SITE}/rest/api/3/issue/`;
+const JIRA_CREATE_ISSUE_URL = `${JIRA_FAKE_SITE}/rest/api/3/issue`;
+const JIRA_SEARCH_URL = `${JIRA_FAKE_SITE}/rest/api/3/search/jql`;
 
 export const DEEPSEEK_FAKE_API_KEY = 'fake-deepseek-key';
 
@@ -204,6 +213,169 @@ export async function fetch(url, init = {}) {
         },
         source: { branch: { name: requestBody.source?.branch?.name ?? '' } },
         destination: { branch: { name: requestBody.destination?.branch?.name ?? '' } },
+      }),
+    );
+  }
+
+  if (typeof url === 'string' && url.startsWith(JIRA_ISSUE_ROOT)) {
+    const headers = init.headers ?? {};
+    const authorization = headers.Authorization ?? headers.authorization ?? null;
+    if (!authorization || !authorization.startsWith('Basic ')) {
+      return fakeResponse(
+        401,
+        'Unauthorized',
+        { 'content-type': 'application/json' },
+        JSON.stringify({ errorMessages: ['no valid Basic auth header'], errors: {} }),
+      );
+    }
+
+    const rest = url.slice(JIRA_ISSUE_ROOT.length);
+    const commentMatch = rest.match(/^([^/]+)\/comment$/);
+
+    if (commentMatch) {
+      const [, issueKey] = commentMatch.map(decodeURIComponent);
+      const requestBody = init.body ? JSON.parse(init.body) : {};
+
+      if (issueKey === 'ABC-404') {
+        return fakeResponse(
+          404,
+          'Not Found',
+          { 'content-type': 'application/json' },
+          JSON.stringify({
+            errorMessages: ['Issue does not exist or you do not have permission to see it.'],
+            errors: {},
+          }),
+        );
+      }
+
+      return fakeResponse(
+        201,
+        'Created',
+        { 'content-type': 'application/json' },
+        JSON.stringify({
+          id: '10001',
+          self: `${JIRA_FAKE_SITE}/rest/api/3/issue/${issueKey}/comment/10001`,
+          author: { displayName: 'Fake Reporter' },
+          created: '2026-08-31T12:00:00.000-0300',
+          body: requestBody.body,
+        }),
+      );
+    }
+
+    const issueKey = decodeURIComponent(rest.split('?')[0]);
+
+    if (issueKey === 'ABC-404') {
+      return fakeResponse(
+        404,
+        'Not Found',
+        { 'content-type': 'application/json' },
+        JSON.stringify({
+          errorMessages: ['Issue does not exist or you do not have permission to see it.'],
+          errors: {},
+        }),
+      );
+    }
+
+    const requestedFields = new URL(url).searchParams.get('fields');
+    return fakeResponse(
+      200,
+      'OK',
+      { 'content-type': 'application/json' },
+      JSON.stringify({
+        key: issueKey,
+        id: '10000',
+        self: `${JIRA_FAKE_SITE}/rest/api/3/issue/${issueKey}`,
+        fields: {
+          summary: 'Fake issue summary',
+          status: { name: 'In Progress' },
+          ...(requestedFields ? { requestedFields } : {}),
+        },
+      }),
+    );
+  }
+
+  if (url === JIRA_CREATE_ISSUE_URL) {
+    const headers = init.headers ?? {};
+    const authorization = headers.Authorization ?? headers.authorization ?? null;
+    if (!authorization || !authorization.startsWith('Basic ')) {
+      return fakeResponse(
+        401,
+        'Unauthorized',
+        { 'content-type': 'application/json' },
+        JSON.stringify({ errorMessages: ['no valid Basic auth header'], errors: {} }),
+      );
+    }
+
+    const requestBody = init.body ? JSON.parse(init.body) : {};
+    const projectKey = requestBody.fields?.project?.key;
+
+    if (projectKey === 'BAD') {
+      return fakeResponse(
+        400,
+        'Bad Request',
+        { 'content-type': 'application/json' },
+        JSON.stringify({
+          errorMessages: [],
+          errors: { issuetype: 'valid issue type is required' },
+        }),
+      );
+    }
+
+    return fakeResponse(
+      201,
+      'Created',
+      { 'content-type': 'application/json' },
+      JSON.stringify({
+        id: '10050',
+        key: `${projectKey}-999`,
+        self: `${JIRA_FAKE_SITE}/rest/api/3/issue/10050`,
+      }),
+    );
+  }
+
+  if (url === JIRA_SEARCH_URL) {
+    const headers = init.headers ?? {};
+    const authorization = headers.Authorization ?? headers.authorization ?? null;
+    if (!authorization || !authorization.startsWith('Basic ')) {
+      return fakeResponse(
+        401,
+        'Unauthorized',
+        { 'content-type': 'application/json' },
+        JSON.stringify({ errorMessages: ['no valid Basic auth header'], errors: {} }),
+      );
+    }
+
+    const requestBody = init.body ? JSON.parse(init.body) : {};
+
+    if (requestBody.jql === 'trigger-error') {
+      return fakeResponse(
+        400,
+        'Bad Request',
+        { 'content-type': 'application/json' },
+        JSON.stringify({ errorMessages: ["Error in the JQL Query: 'trigger-error'"], errors: {} }),
+      );
+    }
+
+    if (requestBody.nextPageToken === 'page-2-token') {
+      return fakeResponse(
+        200,
+        'OK',
+        { 'content-type': 'application/json' },
+        JSON.stringify({
+          issues: [{ key: 'ABC-2', id: '10002', fields: { summary: 'Second page issue' } }],
+          isLast: true,
+        }),
+      );
+    }
+
+    return fakeResponse(
+      200,
+      'OK',
+      { 'content-type': 'application/json' },
+      JSON.stringify({
+        issues: [{ key: 'ABC-1', id: '10000', fields: { summary: 'Fake issue summary' } }],
+        isLast: false,
+        nextPageToken: 'page-2-token',
       }),
     );
   }

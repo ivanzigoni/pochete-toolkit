@@ -33,6 +33,10 @@ src/tools/safe-curl/auth-profiles.json
 src/tools/bitbucket-open-pr/auth-profiles.json
 src/tools/safe-query/config.json
 src/tools/portainer-get-container-logs/config.json
+src/tools/jira-get-issue/auth-profiles.json
+src/tools/jira-add-comment/auth-profiles.json
+src/tools/jira-search-issues/auth-profiles.json
+src/tools/jira-create-issue/auth-profiles.json
 
 # OS files
 .DS_Store
