@@ -1,5 +1,7 @@
 # Repositórios de aplicação — este repo distribui só o workspace do agente, não o código deles.
+# Exceção só para o .gitkeep, que garante a existência da pasta após um clone novo.
 project/*
+!project/.gitkeep
 
 # Worktrees git dos repositórios acima, vinculadas a tarefas em .claude/__workdir/
 _worktrees/
