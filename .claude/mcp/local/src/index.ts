@@ -3,6 +3,10 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 
 import { registerBitbucketOpenPrTool } from './tools/bitbucket-open-pr/register.js';
 import { registerDelegateReasoningTool } from './tools/delegate-reasoning/register.js';
+import { registerJiraAddCommentTool } from './tools/jira-add-comment/register.js';
+import { registerJiraCreateIssueTool } from './tools/jira-create-issue/register.js';
+import { registerJiraGetIssueTool } from './tools/jira-get-issue/register.js';
+import { registerJiraSearchIssuesTool } from './tools/jira-search-issues/register.js';
 import { registerPortainerGetContainerLogsTool } from './tools/portainer-get-container-logs/register.js';
 import { registerSafeCurlTool } from './tools/safe-curl/register.js';
 import { registerSafeQueryTool } from './tools/safe-query/register.js';
@@ -21,6 +25,10 @@ const REGISTRARS: readonly (readonly [string, (server: McpServer) => void])[] = 
   ['bitbucket-open-pr', registerBitbucketOpenPrTool],
   ['portainer-get-container-logs', registerPortainerGetContainerLogsTool],
   ['delegate-reasoning', registerDelegateReasoningTool],
+  ['jira-get-issue', registerJiraGetIssueTool],
+  ['jira-add-comment', registerJiraAddCommentTool],
+  ['jira-search-issues', registerJiraSearchIssuesTool],
+  ['jira-create-issue', registerJiraCreateIssueTool],
 ];
 
 // One tool failing to register (e.g. an unexpected error building its input schema) must never

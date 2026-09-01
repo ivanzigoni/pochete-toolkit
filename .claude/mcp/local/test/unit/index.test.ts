@@ -9,6 +9,10 @@ const {
   registerBitbucketOpenPrMock,
   registerPortainerGetContainerLogsMock,
   registerDelegateReasoningMock,
+  registerJiraGetIssueMock,
+  registerJiraAddCommentMock,
+  registerJiraSearchIssuesMock,
+  registerJiraCreateIssueMock,
 } = vi.hoisted(() => ({
   mcpServerConstructorMock: vi.fn(),
   connectMock: vi.fn().mockResolvedValue(undefined),
@@ -18,6 +22,10 @@ const {
   registerBitbucketOpenPrMock: vi.fn(),
   registerPortainerGetContainerLogsMock: vi.fn(),
   registerDelegateReasoningMock: vi.fn(),
+  registerJiraGetIssueMock: vi.fn(),
+  registerJiraAddCommentMock: vi.fn(),
+  registerJiraSearchIssuesMock: vi.fn(),
+  registerJiraCreateIssueMock: vi.fn(),
 }));
 
 let constructedServer: unknown;
@@ -56,6 +64,18 @@ vi.mock('../../src/tools/portainer-get-container-logs/register.js', () => ({
 vi.mock('../../src/tools/delegate-reasoning/register.js', () => ({
   registerDelegateReasoningTool: registerDelegateReasoningMock,
 }));
+vi.mock('../../src/tools/jira-get-issue/register.js', () => ({
+  registerJiraGetIssueTool: registerJiraGetIssueMock,
+}));
+vi.mock('../../src/tools/jira-add-comment/register.js', () => ({
+  registerJiraAddCommentTool: registerJiraAddCommentMock,
+}));
+vi.mock('../../src/tools/jira-search-issues/register.js', () => ({
+  registerJiraSearchIssuesTool: registerJiraSearchIssuesMock,
+}));
+vi.mock('../../src/tools/jira-create-issue/register.js', () => ({
+  registerJiraCreateIssueTool: registerJiraCreateIssueMock,
+}));
 
 // index.ts runs its bootstrap as top-level module side effects (including a top-level await on
 // server.connect) — importing it once here is the whole test; there is no exported function to
@@ -72,17 +92,25 @@ describe('src/index.ts bootstrap', () => {
     });
   });
 
-  it('registers all 5 tools against the same server instance', () => {
+  it('registers all 9 tools against the same server instance', () => {
     expect(registerSafeQueryMock).toHaveBeenCalledTimes(1);
     expect(registerSafeCurlMock).toHaveBeenCalledTimes(1);
     expect(registerBitbucketOpenPrMock).toHaveBeenCalledTimes(1);
     expect(registerPortainerGetContainerLogsMock).toHaveBeenCalledTimes(1);
     expect(registerDelegateReasoningMock).toHaveBeenCalledTimes(1);
+    expect(registerJiraGetIssueMock).toHaveBeenCalledTimes(1);
+    expect(registerJiraAddCommentMock).toHaveBeenCalledTimes(1);
+    expect(registerJiraSearchIssuesMock).toHaveBeenCalledTimes(1);
+    expect(registerJiraCreateIssueMock).toHaveBeenCalledTimes(1);
     expect(registerSafeQueryMock).toHaveBeenCalledWith(constructedServer);
     expect(registerSafeCurlMock).toHaveBeenCalledWith(constructedServer);
     expect(registerBitbucketOpenPrMock).toHaveBeenCalledWith(constructedServer);
     expect(registerPortainerGetContainerLogsMock).toHaveBeenCalledWith(constructedServer);
     expect(registerDelegateReasoningMock).toHaveBeenCalledWith(constructedServer);
+    expect(registerJiraGetIssueMock).toHaveBeenCalledWith(constructedServer);
+    expect(registerJiraAddCommentMock).toHaveBeenCalledWith(constructedServer);
+    expect(registerJiraSearchIssuesMock).toHaveBeenCalledWith(constructedServer);
+    expect(registerJiraCreateIssueMock).toHaveBeenCalledWith(constructedServer);
   });
 
   it('connects the server over a stdio transport', () => {
