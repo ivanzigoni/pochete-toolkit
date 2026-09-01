@@ -20,7 +20,7 @@ Aplique estas regras ao escrever ou revisar:
 
 Não use estas regras para a própria resposta do agente a um desenvolvedor dentro de uma sessão de
 trabalho técnica — comunicação interna entre agente e desenvolvedor segue
-`.claude/conventions/pctk__agent-tone-of-voice.md`, com regras diferentes (idioma de raciocínio, formato de
+`.claude/rules/default/pctk__agent-tone-of-voice.md`, com regras diferentes (idioma de raciocínio, formato de
 resposta técnica), que não é substituída nem sobreposta por este documento.
 
 ## Idioma e estrangeirismos
