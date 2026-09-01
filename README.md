@@ -61,15 +61,32 @@ O RTK (rtk-ai/rtk) reduz o volume de tokens gasto pelo agente ao filtrar e compa
 comandos executados no terminal. O hook que ativa esse comportamento e os filtros do projeto já
 vêm versionados neste repositório — falta só instalar o binário na sua máquina.
 
-Escolha um dos métodos oficiais:
-
-- Instalação rápida (Linux/macOS): `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/master/install.sh | sh`
-- Homebrew (macOS/Linux): `brew install rtk-ai/tap/rtk`
-- Cargo, se você já tem o toolchain Rust: `cargo install --git https://github.com/rtk-ai/rtk --branch master rtk`
+Siga as instruções de instalação em [github.com/rtk-ai/rtk](https://github.com/rtk-ai/rtk).
 
 Confirme a instalação com `rtk --version`. Não é preciso rodar nenhum comando de configuração
 adicional: assim que o binário estiver no PATH, o Claude Code passa a usar o RTK automaticamente
 nas próximas sessões abertas neste repositório.
+
+### Instalar o CodeGraph
+
+O CodeGraph (colbymchenry/codegraph) mantém, por projeto, um grafo de conhecimento em SQLite dos
+símbolos, arestas e arquivos do código-fonte, exposto ao agente pela tool `codegraph_explore`. O
+registro do servidor MCP e as permissões que o tornam padrão (sem prompt de confirmação a cada
+chamada) já vêm versionados neste repositório, em `.mcp.json` e `.claude/settings.json` — falta só
+instalar o binário e inicializar o índice em cada repositório de aplicação.
+
+Siga as instruções de instalação em
+[github.com/colbymchenry/codegraph](https://github.com/colbymchenry/codegraph).
+
+Confirme a instalação com `codegraph --version`. Não rode `codegraph install`: esse comando serve
+para cadastrar o servidor MCP no agente, e aqui esse cadastro já está versionado em `.mcp.json` e
+`.claude/settings.json`.
+
+Depois de clonar cada repositório de aplicação dentro de `project/` (veja "Onde colocar os
+projetos", acima), rode `codegraph init` na raiz de cada um deles para construir o índice inicial.
+Esse índice fica em `.codegraph/`, local a cada máquina — o próprio `codegraph init` já grava ali
+dentro um `.gitignore` que impede o commit do índice, então não é preciso (nem esperado) editar o
+`.gitignore` de cada repositório de aplicação por causa disso.
 
 ## Projetos com vários repositórios
 
