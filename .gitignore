@@ -11,8 +11,10 @@ _worktrees/
 node_modules/
 
 # Dicionário de domínio pessoal — rule sem paths:, carregada sempre pela descoberta nativa do
-# Claude Code. Pasta inteira ignorada, sem entrypoint nem lista a manter.
+# Claude Code. Pasta inteira ignorada, sem entrypoint nem lista a manter; exceção só para o
+# .gitkeep, que garante a existência da pasta após um clone novo.
 .claude/rules/user/*
+!.claude/rules/user/.gitkeep
 
 # Skills de domínio criadas por quem usa a pochete-toolkit — específicas do workspace de cada
 # usuário, nunca parte do framework distribuído.
@@ -24,3 +26,8 @@ node_modules/
 # Conventions pessoais do desenvolvedor — rule sem paths:, mesmo tratamento das demais extensões
 # user__, mas sempre carregada.
 .claude/rules/default/user__*.md
+
+# Material de referência pessoal — mesmo tratamento do dicionário de domínio acima: pasta inteira
+# ignorada, exceção só para o .gitkeep que garante a existência da pasta após um clone novo.
+.claude/reference/user/*
+!.claude/reference/user/.gitkeep

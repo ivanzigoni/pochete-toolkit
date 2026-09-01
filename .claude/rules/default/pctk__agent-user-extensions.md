@@ -56,13 +56,22 @@ sempre existe para esse tipo de regra —, esse caso vive fora de `.claude/rules
 `.claude/reference/`. Um arquivo ali só entra em contexto quando outra skill, rule ou instrução
 explícita apontar para ele.
 
+Mesma separação `default`/`user` das seções acima, aplicada a este diretório:
+
+| Tipo | Path |
+|---|---|
+| Referência do framework | `.claude/reference/default/pctk__<nome-descritivo>.md`, versionada e mantida pela pochete-toolkit |
+| Referência pessoal | `.claude/reference/user/<nome-descritivo>.md`, específica do workspace de quem usa a toolkit |
+
 ## Por que fica fora do controle de versão
 
 Toda skill sob `.claude/skills/user__*/`, toda rule sob `.claude/rules/scoped/user__*.md` e toda
 convention sob `.claude/rules/default/user__*.md` é ignorada por `.gitignore` (ver raiz do
-repositório) — o mesmo tratamento dado ao dicionário de domínio (`.claude/rules/user/`). A
-pochete-toolkit distribui só o workspace do agente compartilhado entre times; conhecimento de
-domínio de um workspace específico não deve entrar no histórico do framework. Como o ignore é
-automático pelo prefixo (ou, no caso do dicionário, pela pasta inteira), não é preciso lembrar de
-adicionar o arquivo ao `.gitignore` manualmente nem perguntar ao desenvolvedor se ele deve ser
-versionado.
+repositório) — o mesmo tratamento dado ao dicionário de domínio (`.claude/rules/user/`) e ao
+material de referência pessoal (`.claude/reference/user/`). A pochete-toolkit distribui só o
+workspace do agente compartilhado entre times; conhecimento de domínio de um workspace específico
+não deve entrar no histórico do framework. Como o ignore é automático pelo prefixo (ou, no caso do
+dicionário e da referência pessoal, pela pasta inteira), não é preciso lembrar de adicionar o
+arquivo ao `.gitignore` manualmente nem perguntar ao desenvolvedor se ele deve ser versionado. Cada
+uma dessas duas pastas mantém um `.gitkeep` rastreado (com exceção pontual no `.gitignore`) só para
+garantir que a pasta exista após um clone novo.
