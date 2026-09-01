@@ -1,8 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "mcp__codegraph__*",
-      "mcp__atlassian__*"
+      "mcp__codegraph__*"
     ]
   },
   "hooks": {
