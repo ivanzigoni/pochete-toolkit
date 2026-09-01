@@ -38,6 +38,10 @@ fontes externas ao código-fonte e complementa a decisão tanto do agente quanto
 |---|---|
 | `bitbucket-open-pr` | Abre um pull request no Bitbucket. |
 | `delegate-reasoning` | Expõe modelos de linguagem externos via HTTP, indicado para economia de tokens e paralelização de tarefas. |
+| `jira-add-comment` | Adiciona um comentário a um issue no Jira Cloud. |
+| `jira-create-issue` | Cria um issue no Jira Cloud. |
+| `jira-get-issue` | Lê os dados de um issue no Jira Cloud. |
+| `jira-search-issues` | Busca issues no Jira Cloud a partir de uma consulta JQL. |
 | `portainer-get-container-logs` | Obtém logs em tempo real de containers de serviços no Portainer, para diagnóstico de problemas em produção e testes E2E. |
 | `safe-curl` | Executa requisições curl autenticadas. |
 | `safe-query` | Executa consultas SQL somente leitura, com uma camada de redação de dados sensíveis conforme a LGPD. |
