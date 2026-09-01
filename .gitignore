@@ -10,21 +10,17 @@ _worktrees/
 # Dependências e cache de build, instaladas por serviço, nunca versionadas
 node_modules/
 
-# Dicionário de domínio pessoal, incluindo o entrypoint index.md que agrega os arquivos de
-# vocabulário no CLAUDE.md compartilhado via import aninhado. index.example.md é o único arquivo
-# deste diretório que fica versionado, como modelo.
-.claude/dictionary/*
-!.claude/dictionary/index.example.md
+# Dicionário de domínio pessoal — rule sem paths:, carregada sempre pela descoberta nativa do
+# Claude Code. Pasta inteira ignorada, sem entrypoint nem lista a manter.
+.claude/rules/user/*
 
 # Skills de domínio criadas por quem usa a pochete-toolkit — específicas do workspace de cada
 # usuário, nunca parte do framework distribuído.
 .claude/skills/user__*/
 
-# Rules de domínio pessoal — mesma lógica das skills acima, mas para .claude/rules/.
-.claude/rules/user__*.md
+# Rules de domínio pessoal escopadas por paths: — mesma lógica das skills acima.
+.claude/rules/scoped/user__*.md
 
-# Conventions pessoais do desenvolvedor, incluindo o entrypoint user__index.md que as agrega no
-# CLAUDE.md compartilhado via import aninhado. user__index.example.md é o único arquivo deste
-# padrão que fica versionado, como modelo.
-.claude/conventions/user__*.md
-!.claude/conventions/user__index.example.md
+# Conventions pessoais do desenvolvedor — rule sem paths:, mesmo tratamento das demais extensões
+# user__, mas sempre carregada.
+.claude/rules/default/user__*.md
