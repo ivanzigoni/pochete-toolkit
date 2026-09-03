@@ -37,6 +37,8 @@ src/tools/jira-get-issue/auth-profiles.json
 src/tools/jira-add-comment/auth-profiles.json
 src/tools/jira-search-issues/auth-profiles.json
 src/tools/jira-create-issue/auth-profiles.json
+src/tools/railway-safe-cli/auth-profiles.json
+src/tools/railway-safe-cli/command-allowlist.json
 
 # OS files
 .DS_Store

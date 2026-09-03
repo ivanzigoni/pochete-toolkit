@@ -1,0 +1,7 @@
+{
+  "example-project": {
+    "envVar": "RAILWAY_SAFE_CLI_EXAMPLE_PROJECT_TOKEN",
+    "projectId": "00000000-0000-0000-0000-000000000000",
+    "environmentId": "00000000-0000-0000-0000-000000000000"
+  }
+}
