@@ -43,6 +43,7 @@ fontes externas ao código-fonte e complementa a decisão tanto do agente quanto
 | `jira-get-issue` | Lê os dados de um issue no Jira Cloud. |
 | `jira-search-issues` | Busca issues no Jira Cloud a partir de uma consulta JQL. |
 | `portainer-get-container-logs` | Obtém logs em tempo real de containers de serviços no Portainer, para diagnóstico de problemas em produção e testes E2E. |
+| `railway-safe-cli` | Executa comandos allowlisted da Railway CLI, localmente instalada, injetando token e projeto/ambiente sem exigir `railway login`. |
 | `safe-curl` | Executa requisições curl autenticadas. |
 | `safe-query` | Executa consultas SQL somente leitura, com uma camada de redação de dados sensíveis conforme a LGPD. |
 
@@ -92,6 +93,23 @@ Esse índice fica em `.codegraph/`, local a cada máquina — o próprio `codegr
 dentro um `.gitignore` que impede o commit do índice, então não é preciso (nem esperado) editar o
 `.gitignore` de cada repositório de aplicação por causa disso.
 
+### Instalar a Railway CLI
+
+A tool `railway-safe-cli` executa o binário real da [Railway CLI](https://docs.railway.com/guides/cli),
+instalado localmente por você, nunca autenticado via `railway login` — o token de cada projeto
+fica num `.env` próprio da tool e é injetado por chamada. Todo comando nasce bloqueado: um hook
+dedicado impede o agente de invocar `railway` fora dessa tool, e um segundo arquivo decide quais
+subcomandos estão liberados nesta sessão.
+
+Siga as instruções de instalação em [docs.railway.com/guides/cli](https://docs.railway.com/guides/cli).
+Confirme a instalação com `railway --version` no seu próprio terminal — não peça para o agente
+confirmar por você, o hook bloqueia esse tipo de invocação de propósito.
+
+Depois, em `.claude/mcp/local/src/tools/railway-safe-cli/`, copie os três arquivos de exemplo para
+os seus equivalentes reais (gitignorados) e preencha à mão: `.env.example` → `.env` (token por
+projeto), `auth-profiles.example.json` → `auth-profiles.json` (projeto/ambiente por profile) e
+`command-allowlist.example.json` → `command-allowlist.json` (subcomandos liberados — nasce vazio).
+
 ## Projetos com vários repositórios
 
 A pochete-toolkit funciona bem em projetos com vários repositórios. Você acumula conhecimento de
@@ -114,7 +132,7 @@ O fluxo de trabalho usa a estrutura de diretórios com prefixo `_`, dentro de `.
 
 ## Segurança
 
-A pochete-toolkit segue os princípios da filosofia zero trust: aplica opt-in por meio de allowlists tanto para a navegação entre diretórios quanto para os comandos de git permitidos.
+A pochete-toolkit segue os princípios da filosofia zero trust: aplica opt-in por meio de allowlists para a navegação entre diretórios, os comandos de git permitidos, e a execução de CLIs externas fora da tool que as encapsula (ex.: a Railway CLI, só via `railway-safe-cli`).
 
 A pochete-toolkit bloqueia comportamentos indesejados de forma mecânica. O agente não consegue ler arquivos .env, chaves de API, arquivos de credenciais e senhas, nem outros artefatos sensíveis relacionados à autenticação.
 
