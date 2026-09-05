@@ -95,6 +95,26 @@ flowchart LR
 
 RTK e CodeGraph são opcionais, mas indicados. A Railway CLI é opcional, conforme a necessidade.
 
+### Iniciar um workspace com o pochete-cli
+
+O [pochete-cli](https://github.com/ivanzigoni/pochete-cli) automatiza a criação de um novo
+workspace: clona este repositório e cada repositório de aplicação informado, já dentro de
+`project/`.
+
+Instale:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/ivanzigoni/pochete-cli/main/install.sh | bash
+```
+
+Depois, crie o workspace:
+
+```sh
+pochete clone git@github.com:sua-org/seu-servico.git meu-workspace
+```
+
+Sem o pochete-cli, clone este repositório manualmente e siga os passos abaixo.
+
 ### Onde colocar os projetos
 
 Clone ou inicie cada repositório de aplicação em `project/`, um por subdiretório (ex.:
