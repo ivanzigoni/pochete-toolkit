@@ -11,11 +11,11 @@
 # checks; only the command-allowlist.json protection tests need to know the file's resolved path.
 #
 # command-allowlist.json's location is derived from the script's own directory (two levels up,
-# then into mcp/local/src/tools/railway-safe-cli/), not from CLAUDE_PROJECT_DIR — see the header of
-# enforce-railway-cli-scope.sh. Every test runs against a symlink to the real script placed inside
-# a fake hook directory under a fake project, with the same mcp/local/src/tools/railway-safe-cli/
-# tree recreated alongside it, mirroring the isolation technique enforce-git-allowlist.bats already
-# uses.
+# then into mcp/pctk__default/src/tools/railway-safe-cli/), not from CLAUDE_PROJECT_DIR — see the
+# header of enforce-railway-cli-scope.sh. Every test runs against a symlink to the real script
+# placed inside a fake hook directory under a fake project, with the same
+# mcp/pctk__default/src/tools/railway-safe-cli/ tree recreated alongside it, mirroring the
+# isolation technique enforce-git-allowlist.bats already uses.
 
 bats_require_minimum_version 1.5.0
 
@@ -26,12 +26,12 @@ setup() {
     PROJECT_DIR="$BATS_TEST_TMPDIR/project"
     mkdir -p "$PROJECT_DIR/.claude"
 
-    FAKE_HOOK_DIR="$PROJECT_DIR/.claude/hooks/enforce-railway-cli-scope"
+    FAKE_HOOK_DIR="$PROJECT_DIR/.claude/hooks/pctk__enforce-railway-cli-scope"
     mkdir -p "$FAKE_HOOK_DIR"
     SCRIPT="$FAKE_HOOK_DIR/enforce-railway-cli-scope.sh"
     ln -s "$REAL_SCRIPT" "$SCRIPT"
 
-    FAKE_TOOL_DIR="$PROJECT_DIR/.claude/mcp/local/src/tools/railway-safe-cli"
+    FAKE_TOOL_DIR="$PROJECT_DIR/.claude/mcp/pctk__default/src/tools/railway-safe-cli"
     mkdir -p "$FAKE_TOOL_DIR"
     RAILWAY_ALLOWLIST_FILE="$FAKE_TOOL_DIR/command-allowlist.json"
 

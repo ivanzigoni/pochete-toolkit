@@ -1,1 +1,0 @@
-{"tool_name":"Bash","cwd":"@PROJECT@","tool_input":{"command":"cat .claude/hooks/enforce-path-allowlist/path-allowlist.json"}}

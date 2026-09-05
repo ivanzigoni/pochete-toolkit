@@ -14,7 +14,7 @@
 # from CLAUDE_PROJECT_DIR — see the header of enforce-git-allowlist.sh. To keep this suite
 # isolated from the real repo's real git-allowlist.json (which lives beside the real script),
 # every test runs against a symlink to the real script placed inside a fake hook directory under a
-# fake project, mirroring the real .claude/hooks/enforce-git-allowlist/ layout and the same
+# fake project, mirroring the real .claude/hooks/pctk__enforce-git-allowlist/ layout and the same
 # isolation technique enforce-path-allowlist.bats already uses. $0's dirname then resolves
 # inside the fake project, exactly as it would in production, without ever touching the real
 # git-allowlist.json.
@@ -35,7 +35,7 @@ setup() {
     PROJECT_DIR="$BATS_TEST_TMPDIR/project"
     mkdir -p "$PROJECT_DIR/.claude"
 
-    FAKE_HOOK_DIR="$PROJECT_DIR/.claude/hooks/enforce-git-allowlist"
+    FAKE_HOOK_DIR="$PROJECT_DIR/.claude/hooks/pctk__enforce-git-allowlist"
     mkdir -p "$FAKE_HOOK_DIR"
     SCRIPT="$FAKE_HOOK_DIR/enforce-git-allowlist.sh"
     ln -s "$REAL_SCRIPT" "$SCRIPT"

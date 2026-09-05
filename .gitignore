@@ -29,6 +29,11 @@ node_modules/
 # user__, mas sempre carregada.
 .claude/rules/default/user__*.md
 
+# Servidores MCP pessoais — código-fonte de cada um, específico do workspace de quem usa a
+# pochete-toolkit. O registro do servidor (claude mcp add --scope local) não passa por aqui: fica
+# em ~/.claude.json, fora deste repositório.
+.claude/mcp/user__*/
+
 # Material de referência pessoal — mesmo tratamento do dicionário de domínio acima: pasta inteira
 # ignorada, exceção só para o .gitkeep que garante a existência da pasta após um clone novo.
 .claude/reference/user/*

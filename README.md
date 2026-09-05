@@ -105,7 +105,7 @@ Siga as instruções de instalação em [docs.railway.com/guides/cli](https://do
 Confirme a instalação com `railway --version` no seu próprio terminal — não peça para o agente
 confirmar por você, o hook bloqueia esse tipo de invocação de propósito.
 
-Depois, em `.claude/mcp/local/src/tools/railway-safe-cli/`, copie os três arquivos de exemplo para
+Depois, em `.claude/mcp/pctk__default/src/tools/railway-safe-cli/`, copie os três arquivos de exemplo para
 os seus equivalentes reais (gitignorados) e preencha à mão: `.env.example` → `.env` (token por
 projeto), `auth-profiles.example.json` → `auth-profiles.json` (projeto/ambiente por profile) e
 `command-allowlist.example.json` → `command-allowlist.json` (subcomandos liberados — nasce vazio).
@@ -117,11 +117,12 @@ domínio em `.claude/rules/user/` ao longo do tempo, o que melhora a precisão d
 
 ## Extensões de domínio
 
-A pochete-toolkit distribui suas próprias skills e rules com prefixo `pctk__` e suas próprias
-conventions com prefixo `pctk__agent-` (versionadas, mantidas pelo framework). Você pode criar as
-três coisas com conteúdo específico do domínio de negócio do seu workspace, usando prefixo
-`user__` — path exato, mecanismo de descoberta e passo a passo para conventions em
-`.claude/rules/default/pctk__agent-user-extensions.md`.
+A pochete-toolkit distribui suas próprias skills e rules com prefixo `pctk__`, suas próprias
+conventions com prefixo `pctk__agent-` e seu próprio servidor MCP em `.claude/mcp/pctk__default/`
+(tudo versionado, mantido pelo framework). Você pode criar as quatro coisas com conteúdo
+específico do domínio de negócio do seu workspace, usando prefixo `user__` — path exato,
+mecanismo de descoberta (ou, no caso do servidor MCP, o passo de registro) e passo a passo para
+conventions em `.claude/rules/default/pctk__agent-user-extensions.md`.
 
 Tudo isso fica automaticamente fora do controle de versão deste repositório (veja `.gitignore`),
 sem nenhuma configuração adicional.

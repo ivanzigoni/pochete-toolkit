@@ -2,32 +2,33 @@
 
 A pochete-toolkit distribui suas próprias skills e rules sob o prefixo `pctk__` (ex.:
 `pctk__workflow__diagnostico.skill`, `pctk__safe-bash.md`) e suas próprias conventions sob o
-prefixo `pctk__agent-` (ex.: `pctk__agent-git.md`), todas versionadas e mantidas pelo próprio
-framework. Quem usa a pochete-toolkit em um workspace próprio também pode criar as três coisas com
-conteúdo específico do domínio de negócio desse workspace — sem que isso faça parte do framework
-distribuído.
+prefixo `pctk__agent-` (ex.: `pctk__agent-git.md`), além de um servidor MCP próprio sob
+`.claude/mcp/pctk__default/`. Todas versionadas e mantidas pelo próprio framework. Quem usa a
+pochete-toolkit em um workspace próprio também pode criar as quatro coisas com conteúdo específico
+do domínio de negócio desse workspace — sem que isso faça parte do framework distribuído.
 
 ## Convenção de nome e path
 
-Toda skill, rule ou convention de domínio criada a pedido do desenvolvedor (não como parte da
-manutenção do próprio framework pochete-toolkit) usa o prefixo `user__`:
+Toda skill, rule, convention ou servidor MCP de domínio criado a pedido do desenvolvedor (não como
+parte da manutenção do próprio framework pochete-toolkit) usa o prefixo `user__`:
 
 | Tipo | Path |
 |---|---|
 | Skill | `.claude/skills/user__<categoria>__<nome-especifico>.skill/SKILL.md` |
 | Rule (escopada por tipo de arquivo) | `.claude/rules/scoped/user__<nome-descritivo>.md`, com seu próprio `paths:` no frontmatter |
 | Convention (sempre carregada) | `.claude/rules/default/user__<nome-descritivo>.md`, sem `paths:` no frontmatter |
+| Servidor MCP | `.claude/mcp/user__<nome-descritivo>/` |
 
 Para skills, `<categoria>` é livre — o domínio de negócio do workspace do usuário, não um valor
 fixo pela pochete-toolkit. Em todos os casos, `<nome-especifico>`/`<nome-descritivo>` segue o
 mesmo padrão de especificidade de `.claude/rules/default/pctk__agent-git.md` (bloco 2): nomeia o
 artefato de verdade, não um rótulo genérico.
 
-Ao criar uma skill, rule ou convention de domínio a pedido do desenvolvedor, aplicar o prefixo
-`user__` por padrão, sem perguntar — a menos que o próprio pedido deixe explícito que o artefato
-deve fazer parte do framework pochete-toolkit em si (prefixo `pctk__` para skill ou rule, prefixo
-`pctk__agent-` para convention), decisão que cabe a quem mantém o framework, não a um uso comum da
-toolkit.
+Ao criar uma skill, rule, convention ou servidor MCP de domínio a pedido do desenvolvedor, aplicar
+o prefixo `user__` por padrão, sem perguntar — a menos que o próprio pedido deixe explícito que o
+artefato deve fazer parte do framework pochete-toolkit em si (prefixo `pctk__` para skill ou rule,
+prefixo `pctk__agent-` para convention, prefixo `pctk__default` para o servidor MCP), decisão que
+cabe a quem mantém o framework, não a um uso comum da toolkit.
 
 ## Skills e rules escopadas: descoberta automática, nenhum passo extra
 
@@ -36,6 +37,15 @@ skills por diretório (`.claude/skills/*.skill/SKILL.md`), rules por `paths:` no
 batendo com o arquivo lido ou editado na sessão — hoje reunidas em `.claude/rules/scoped/`.
 Nenhuma das duas passa por `CLAUDE.md` — basta criar o arquivo no lugar certo, com o prefixo
 certo, para que ele passe a valer.
+
+## Servidor MCP: path convencionado, registro manual
+
+Diferente das três extensões acima, um servidor MCP sob `.claude/mcp/user__<nome>/` não é
+descoberto automaticamente pelo harness — ele só passa a existir como tool depois de registrado.
+Esse registro nunca vai para `.mcp.json`: esse arquivo é versionado e compartilhado, e um servidor
+pessoal registrado ali vazaria para todo o time que usa este workspace. O registro correto usa o
+scope local nativo do Claude Code, `claude mcp add --scope local <nome> <comando>`, que grava em
+`~/.claude.json` — fora deste repositório, sem tocar em nenhum arquivo versionado.
 
 ## Conventions: a mesma descoberta nativa, só sem `paths:`
 
@@ -65,10 +75,13 @@ Mesma separação `default`/`user` das seções acima, aplicada a este diretóri
 
 ## Por que fica fora do controle de versão
 
-Toda skill sob `.claude/skills/user__*/`, toda rule sob `.claude/rules/scoped/user__*.md` e toda
-convention sob `.claude/rules/default/user__*.md` é ignorada por `.gitignore` (ver raiz do
-repositório) — o mesmo tratamento dado ao dicionário de domínio (`.claude/rules/user/`) e ao
-material de referência pessoal (`.claude/reference/user/`). A pochete-toolkit distribui só o
+Toda skill sob `.claude/skills/user__*/`, toda rule sob `.claude/rules/scoped/user__*.md`, toda
+convention sob `.claude/rules/default/user__*.md` e todo servidor MCP sob `.claude/mcp/user__*/` é
+ignorado por `.gitignore` (ver raiz do repositório) — o mesmo tratamento dado ao dicionário de
+domínio (`.claude/rules/user/`) e ao material de referência pessoal (`.claude/reference/user/`).
+Note que o `.gitignore` cobre só o código-fonte do servidor MCP: seu registro
+(`claude mcp add --scope local`) já fica fora deste repositório por natureza, sem depender do
+`.gitignore` (ver seção acima). A pochete-toolkit distribui só o
 workspace do agente compartilhado entre times; conhecimento de domínio de um workspace específico
 não deve entrar no histórico do framework. Como o ignore é automático pelo prefixo (ou, no caso do
 dicionário e da referência pessoal, pela pasta inteira), não é preciso lembrar de adicionar o

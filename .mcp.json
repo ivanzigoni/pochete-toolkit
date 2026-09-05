@@ -1,7 +1,7 @@
 {
   "mcpServers": {
-    "local": {
-      "command": ".claude/mcp/local/run.sh",
+    "pctk__default": {
+      "command": ".claude/mcp/pctk__default/run.sh",
       "args": []
     },
     "playwright": {
