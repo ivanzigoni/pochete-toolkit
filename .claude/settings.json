@@ -11,7 +11,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-safe-credentials/enforce-safe-credentials.sh"
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pctk__enforce-safe-credentials/enforce-safe-credentials.sh"
           }
         ]
       },
@@ -20,7 +20,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-path-allowlist/enforce-path-allowlist.sh"
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pctk__enforce-path-allowlist/enforce-path-allowlist.sh"
           }
         ]
       },
@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-git-allowlist/enforce-git-allowlist.sh"
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pctk__enforce-git-allowlist/enforce-git-allowlist.sh"
           }
         ]
       },
@@ -38,7 +38,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/enforce-railway-cli-scope/enforce-railway-cli-scope.sh"
+            "command": "$CLAUDE_PROJECT_DIR/.claude/hooks/pctk__enforce-railway-cli-scope/enforce-railway-cli-scope.sh"
           }
         ]
       },

@@ -50,7 +50,7 @@
 # real shell would expand it to an escape. The same narrower check also missed a relative
 # traversal with no cd (`cat ../../../etc/passwd`) and path-allowlist.json referenced by a
 # differently spelled relative path (e.g.
-# `cat ./.claude/hooks/enforce-path-allowlist/path-allowlist.json`).
+# `cat ./.claude/hooks/pctk__enforce-path-allowlist/path-allowlist.json`).
 # Resolving every token closes all three at once and costs nothing in false positives — a
 # non-path token (a flag, a search term, an in-tree filename) always resolves to somewhere under
 # $cwd, which is already an allowed root.

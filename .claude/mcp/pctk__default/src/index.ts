@@ -17,7 +17,7 @@ import { registerSafeQueryTool } from './tools/safe-query/register.js';
 // tool's own single JSON config file (auth-profiles.json, config.json) is read the same way,
 // fresh per call — see src/shared/json-registry.ts.
 
-const server = new McpServer({ name: 'local', version: '1.0.0' });
+const server = new McpServer({ name: 'pctk__default', version: '1.0.0' });
 
 // Add more [name, registerXTool] entries here as more tools join this server.
 const REGISTRARS: readonly (readonly [string, (server: McpServer) => void])[] = [
@@ -41,7 +41,7 @@ for (const [name, register] of REGISTRARS) {
     register(server);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`[local-mcp] failed to register tool "${name}", skipping: ${message}`);
+    console.error(`[pctk__default-mcp] failed to register tool "${name}", skipping: ${message}`);
   }
 }
 

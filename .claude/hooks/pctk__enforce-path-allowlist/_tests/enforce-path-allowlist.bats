@@ -17,7 +17,7 @@
 # from CLAUDE_PROJECT_DIR — see the header of enforce-path-allowlist.sh. To keep this suite
 # isolated from the real repo's real path-allowlist.json (which lives beside the real script),
 # every test runs against a symlink to the real script placed inside a fake hook directory under
-# the fake project, mirroring the real .claude/hooks/enforce-path-allowlist/ layout. $0's dirname
+# the fake project, mirroring the real .claude/hooks/pctk__enforce-path-allowlist/ layout. $0's dirname
 # then resolves inside the fake project, exactly as it would in production, without ever touching
 # the real path-allowlist.json.
 
@@ -40,7 +40,7 @@ setup() {
     SCRATCH_DIR="/tmp/claude-$(id -u)/$PROJECT_SLUG/$SESSION_ID/scratchpad"
     mkdir -p "$SCRATCH_DIR"
 
-    FAKE_HOOK_DIR="$PROJECT_DIR/.claude/hooks/enforce-path-allowlist"
+    FAKE_HOOK_DIR="$PROJECT_DIR/.claude/hooks/pctk__enforce-path-allowlist"
     mkdir -p "$FAKE_HOOK_DIR"
     SCRIPT="$FAKE_HOOK_DIR/enforce-path-allowlist.sh"
     ln -s "$REAL_SCRIPT" "$SCRIPT"

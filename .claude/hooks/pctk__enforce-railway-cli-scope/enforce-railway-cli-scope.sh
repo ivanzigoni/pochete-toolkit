@@ -13,7 +13,7 @@
 #      command is the railway-safe-cli MCP tool, which injects the token and the fixed
 #      project/environment/service server-side (never as a caller-supplied argument) and enforces
 #      its own per-subcommand allowlist in TypeScript — see this repo's
-#      .claude/mcp/local/src/tools/railway-safe-cli/command-allowlist.json. That allowlist decides
+#      .claude/mcp/pctk__default/src/tools/railway-safe-cli/command-allowlist.json. That allowlist decides
 #      *which* subcommands are safe; this hook only decides *whether the binary may be reached at
 #      all outside the tool* — deliberately simpler than enforce-git-allowlist.sh's six-rule engine,
 #      because there is no direct-Bash form of `railway` this session ever allows, unlike `git`.
@@ -26,7 +26,7 @@
 #      Only a human editing the file directly can grant a new subcommand.
 #
 # command-allowlist.json's path is derived from this script's own directory (two levels up, then
-# across into ../../mcp/local/src/tools/railway-safe-cli/), the same "self-contained wherever this
+# across into ../../mcp/pctk__default/src/tools/railway-safe-cli/), the same "self-contained wherever this
 # directory is copied" reasoning enforce-git-allowlist.sh uses for git-allowlist.json — no
 # dependency on $CLAUDE_PROJECT_DIR being set.
 #
@@ -70,9 +70,9 @@ esac
 readonly SCRIPT_DIR_RAW
 readonly DEPENDENCIES=(jq realpath)
 readonly STRIP_CHARS="\"';&|()<>"
-# Relative to this script's own directory: .claude/hooks/enforce-railway-cli-scope/ -> up two
-# levels to .claude/ -> across into mcp/local/src/tools/railway-safe-cli/command-allowlist.json.
-readonly ALLOWLIST_RELATIVE_PATH="../../mcp/local/src/tools/railway-safe-cli/command-allowlist.json"
+# Relative to this script's own directory: .claude/hooks/pctk__enforce-railway-cli-scope/ -> up two
+# levels to .claude/ -> across into mcp/pctk__default/src/tools/railway-safe-cli/command-allowlist.json.
+readonly ALLOWLIST_RELATIVE_PATH="../../mcp/pctk__default/src/tools/railway-safe-cli/command-allowlist.json"
 
 VERBOSE=0
 INPUT_FILE=""

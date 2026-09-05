@@ -87,7 +87,7 @@ beforeAll(async () => {
 describe('src/index.ts bootstrap', () => {
   it("constructs the McpServer with this server's name and version", () => {
     expect(mcpServerConstructorMock).toHaveBeenCalledWith({
-      name: 'local',
+      name: 'pctk__default',
       version: '1.0.0',
     });
   });
