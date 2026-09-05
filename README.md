@@ -19,6 +19,7 @@
 - [Projetos com vários repositórios](#projetos-com-vários-repositórios)
 - [Espaço para o seu domínio](#espaço-para-o-seu-domínio)
 - [Fluxo de trabalho](#fluxo-de-trabalho)
+- [Projetos relacionados](#projetos-relacionados)
 - [Segurança](#segurança)
 - [Licença](#licença)
 
@@ -97,13 +98,21 @@ RTK e CodeGraph são opcionais, mas indicados. A Railway CLI é opcional, confor
 
 ### Onde colocar os projetos
 
-Clone ou inicie cada repositório de aplicação em `project/`, um por subdiretório (ex.:
+Cada repositório de aplicação vive em `project/`, um por subdiretório (ex.:
 `project/meu-servico/`). O diretório fica fora do controle de versão deste repositório (veja
 `.gitignore`) — a pochete-toolkit distribui só o workspace do agente, não o código das
 aplicações. Seu projeto não precisa estar hospedado no GitHub ou similar.
 
-Com vários repositórios, clone todos lado a lado em `project/`. Veja
-[Projetos com vários repositórios](#projetos-com-vários-repositórios), abaixo.
+Duas formas de montar essa estrutura:
+
+- **Automatizada, via [pochete-cli](https://github.com/ivanzigoni/pochete-cli/):** um único
+  comando clona a pochete-toolkit e cada repositório de aplicação informado, já organizados como
+  esperado.
+- **Manual:** clone ou inicie você mesmo a pochete-toolkit e cada repositório de aplicação em
+  `project/`.
+
+Com vários repositórios, clone todos lado a lado em `project/` (ou informe todos ao
+pochete-cli). Veja [Projetos com vários repositórios](#projetos-com-vários-repositórios), abaixo.
 
 <details>
 <summary><strong>Instalar o RTK (opcional)</strong></summary>
@@ -249,6 +258,12 @@ A skill `pctk__workflow__create-workdir` cria a tarefa rastreada e a vincula a u
 aplicação, com sua própria worktree git. O detalhamento de cada diretório — incluindo a resolução
 de nome nu ("salva no tmp", "joga no stash") — está em
 [pctk__agent-internal-dirs.md](.claude/rules/default/pctk__agent-internal-dirs.md).
+
+## Projetos relacionados
+
+- [pochete-cli](https://github.com/ivanzigoni/pochete-cli/) — inicializador de linha de comando
+  que clona a pochete-toolkit no workspace e cada repositório de aplicação informado,
+  automatizando a configuração de um ambiente de desenvolvimento completo com um único comando.
 
 ## Segurança
 
