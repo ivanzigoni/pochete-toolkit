@@ -1,7 +1,7 @@
 # Instruções de git
 
-Fonte única das instruções de git deste workspace — dois blocos: conventional commits e
-conventional branches.
+Fonte única das instruções de git deste workspace — três blocos: conventional commits,
+conventional branches e sintaxe moderna.
 
 # Bloco 1 — Conventional commits
 
@@ -72,3 +72,16 @@ Este bloco aplica-se só a trabalho de branch/worktree/PR feito como parte de um
 em `.claude/__workdir/<task>/`. Uma operação de git avulsa fora desse contexto não aciona este
 bloco — o bloco 1 (conventional commits) continua valendo sempre, independente de tarefa
 rastreada.
+
+# Bloco 3 — Sintaxe de git moderna
+
+Preferir os comandos modernos e de propósito único sobre `git checkout`, que acumula funções
+distintas (trocar de branch, restaurar arquivo, criar branch) num único comando ambíguo:
+
+- Trocar de branch: `git switch <branch>`, nunca `git checkout <branch>`.
+- Criar e trocar para uma branch nova: `git switch -c <branch>`, nunca `git checkout -b <branch>`.
+- Restaurar arquivo(s) do working tree ou tirar do stage: `git restore` / `git restore --staged`,
+  nunca `git checkout -- <arquivo>`.
+
+`git checkout` só é aceitável quando a operação não tem equivalente em `switch`/`restore` (ex.:
+checkout de um commit específico em detached HEAD para inspeção pontual).
