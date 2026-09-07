@@ -203,41 +203,38 @@ exemplo para os equivalentes reais (gitignorados) e preencha à mão:
 ## Projetos com vários repositórios
 
 A pochete-toolkit funciona bem em projetos com vários repositórios. Você acumula conhecimento de
-domínio em `.claude/rules/user/` ao longo do tempo — isso melhora a precisão do agente.
+domínio nos arquivos `user__` de `.claude/rules/` ao longo do tempo — isso melhora a precisão do
+agente.
 
 ## Espaço para o seu domínio
 
-A pochete-toolkit distribui skills, rules, conventions, material de referência e servidor MCP
-próprios sob o prefixo `pctk__`. Você cria os mesmos tipos de artefato para o domínio do seu
-workspace, também sob o prefixo `user__`:
+A pochete-toolkit distribui skills, rules, conventions, blocks e servidor MCP próprios sob o
+prefixo `pctk__`. Você cria os mesmos tipos de artefato para o domínio do seu workspace, também
+sob o prefixo `user__`:
 
 ```
 .
-├── project/                                            # repositórios de aplicação (fora do versionamento)
+├── project/                                    # repositórios de aplicação (fora do versionamento)
 └── .claude/
     ├── skills/
-    │   ├── pctk__<categoria>__<nome>.skill/SKILL.md    # skill, framework
-    │   └── user__<categoria>__<nome>.skill/SKILL.md    # skill, domínio
+    │   ├── pctk__<categoria>__<nome>/SKILL.md    # skill, framework
+    │   └── user__<categoria>__<nome>/SKILL.md    # skill, domínio
     ├── rules/
-    │   ├── default/
-    │   │   └── pctk__<nome>.md                         # rule ou convention, framework
-    │   └── user/
-    │       └── user__<nome>.md                         # rule ou convention, domínio
-    ├── reference/
-    │   ├── default/
-    │   │   └── pctk__<nome>.md                         # referência, framework
-    │   └── user/
-    │       └── user__<nome>.md                         # referência, domínio
+    │   ├── pctk__<nome>.md                       # rule ou convention, framework
+    │   └── user__<nome>.md                       # rule ou convention, domínio
+    ├── blocks/
+    │   ├── pctk__<nome>.md                       # block, framework
+    │   └── user__<nome>.md                       # block, domínio
     └── mcp/
-        ├── pctk__default/                              # servidor MCP, framework
-        └── user__<nome>/                               # servidor MCP, domínio
+        ├── pctk__default/                        # servidor MCP, framework
+        └── user__<nome>/                          # servidor MCP, domínio
 ```
 
 Rule e convention são o mesmo tipo de arquivo — a diferença é só o campo `paths:` no
 frontmatter (presente numa rule escopada, ausente numa convention sempre carregada).
 
 Path exato, mecanismo de descoberta e passo a passo em
-[pctk__agent-user-extensions.md](.claude/rules/default/pctk__agent-user-extensions.md).
+[pctk__agent-user-extensions.md](.claude/rules/pctk__agent-user-extensions.md).
 
 Tudo sob `user__` fica fora do controle de versão deste repositório (veja `.gitignore`), sem
 configuração adicional.
@@ -257,7 +254,7 @@ rastreados por `.gitkeep` com conteúdo ignorado pelo `.gitignore`:
 A skill `pctk__workflow__create-workdir` cria a tarefa rastreada e a vincula a um repositório de
 aplicação, com sua própria worktree git. O detalhamento de cada diretório — incluindo a resolução
 de nome nu ("salva no tmp", "joga no stash") — está em
-[pctk__agent-internal-dirs.md](.claude/rules/default/pctk__agent-internal-dirs.md).
+[pctk__agent-internal-dirs.md](.claude/rules/pctk__agent-internal-dirs.md).
 
 ## Projetos relacionados
 
