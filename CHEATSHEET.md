@@ -43,6 +43,12 @@ Todos com a mesma forma: `**Label:** conteúdo`. Puramente textual, sem execuç�
 | `<OnError>` | `**On Error:** conteúdo` |
 | `<CallTool>` | `**Call Tool:** conteúdo` |
 
+## Formato de entrada
+
+| Componente | Props | Comportamento |
+|---|---|---|
+| `<InputFormat title="..." schema={...}>` | `title?: string`, `schema?: unknown` | Espelho exato de `<OutputFormat>` (mesma prop, mesmo render) — título em negrito (se houver) + `children` + bloco de código ` ```json ` com o schema serializado (se houver). `schema` objeto vira `JSON.stringify(schema, null, 2)`; qualquer outro tipo vira `String(schema)`. |
+
 ## Formato de saída
 
 | Componente | Props | Comportamento |
