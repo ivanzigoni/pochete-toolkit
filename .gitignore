@@ -3,6 +3,11 @@
 project/*
 !project/.gitkeep
 
+# Conteúdo de domínio consumido pelo comando `build` — específico do workspace de quem usa a
+# pochete-toolkit, nunca parte do framework distribuído. Mesmo tratamento de project/ acima.
+domain/*
+!domain/.gitkeep
+
 # Worktrees git dos repositórios acima, vinculadas a tarefas em .claude/__workdir/
 _worktrees/
 
@@ -13,11 +18,10 @@ _worktrees/
 node_modules/
 
 # Rules e conventions pessoais — escopadas por paths: ou sempre carregadas, mais o dicionário de
-# domínio (rule sem paths:, carregada sempre pela descoberta nativa do Claude Code). Pasta inteira
-# ignorada, sem entrypoint nem lista a manter; exceção só para o .gitkeep, que garante a
-# existência da pasta após um clone novo.
-.claude/rules/user/*
-!.claude/rules/user/.gitkeep
+# domínio (rule sem paths:, carregada sempre pela descoberta nativa do Claude Code). Distinguidas
+# do framework só pelo prefixo do nome, lado a lado em .claude/rules/ — sem pasta própria, então
+# sem necessidade de .gitkeep (o diretório sempre tem conteúdo pctk__ versionado).
+.claude/rules/user__*.md
 
 # Skills de domínio criadas por quem usa a pochete-toolkit — específicas do workspace de cada
 # usuário, nunca parte do framework distribuído.
@@ -28,7 +32,6 @@ node_modules/
 # em ~/.claude.json, fora deste repositório.
 .claude/mcp/user__*/
 
-# Material de referência pessoal — mesmo tratamento do dicionário de domínio acima: pasta inteira
-# ignorada, exceção só para o .gitkeep que garante a existência da pasta após um clone novo.
-.claude/reference/user/*
-!.claude/reference/user/.gitkeep
+# Block pessoal — mesmo tratamento das rules pessoais acima: distinguido do framework só pelo
+# prefixo do nome, lado a lado em .claude/blocks/.
+.claude/blocks/user__*.md
