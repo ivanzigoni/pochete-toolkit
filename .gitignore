@@ -3,6 +3,11 @@
 project/*
 !project/.gitkeep
 
+# Conteúdo de domínio consumido pelo comando `build` — específico do workspace de quem usa a
+# pochete-toolkit, nunca parte do framework distribuído. Mesmo tratamento de project/ acima.
+domain/*
+!domain/.gitkeep
+
 # Worktrees git dos repositórios acima, vinculadas a tarefas em .claude/__workdir/
 _worktrees/
 
