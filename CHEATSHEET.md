@@ -11,7 +11,7 @@ nenhuma delas, o arquivo é ignorado pelo build.
 
 | Componente | Props | Destino gerado |
 |---|---|---|
-| `<Skill name="..." description="...">` | `name` (obrigatório), `description` (obrigatório) | `.claude/skills/user__<arquivo>/SKILL.md`, com frontmatter `name`/`description` |
+| `<Skill name="..." description="...">` | `name` (obrigatório), `description` (obrigatório) | Exige viver em `domain/<nome>/SKILL.mdx` (arquivo chamado exatamente `SKILL.mdx`, dentro de uma pasta) → `.claude/skills/user__<nome-da-pasta>/SKILL.md`, com frontmatter `name`/`description`. Ver seção "Scripts e assets" abaixo. |
 | `<Rule paths={["**/*.ts"]}>` | `paths?: string[]` | `.claude/rules/user__<arquivo>.md`, com frontmatter `paths` (omitido se ausente) |
 | `<Block>` | nenhuma | `.claude/blocks/user__<arquivo>.md`, sem frontmatter |
 
@@ -79,3 +79,34 @@ compilar o `.mdx`. Documentados aqui porque também podem ser chamados explicita
 | Sintaxe | Comportamento |
 |---|---|
 | `<Include skill="caminho-sem-extensao" />` | Resolvido **antes** da renderização: substitui pelo conteúdo bruto do `.mdx` referenciado (relativo ao arquivo atual). Detecta ciclos. Útil para compartilhar um trecho entre vários `Skill`/`Rule`/`Block`. |
+
+## Scripts e assets empacotados junto de uma skill (convenção de pasta, não componente)
+
+Toda `<Skill>` vive em `domain/<nome>/SKILL.mdx` — uma pasta com esse nome, contendo um arquivo
+chamado exatamente `SKILL.mdx`. Isso vale sempre, independente de a skill ter ou não um script
+auxiliar: o nome da pasta é o que vira `user__<nome>` no destino, não mais o nome do arquivo.
+
+Qualquer outro arquivo que fique **ao lado** de `SKILL.mdx`, na mesma pasta (script bash, `.js`,
+`.py`, subpastas como `scripts/`) é copiado por `pochete build` para
+`.claude/skills/user__<nome>/`, junto do `SKILL.md` gerado, preservando estrutura de subpastas e
+o bit de execução de cada arquivo. Não precisa de sintaxe nova no `.mdx` nem de nenhuma pasta
+extra — é o mesmo diretório onde `SKILL.mdx` já está.
+
+Regras de exclusão dessa cópia:
+- `SKILL.mdx` (a própria fonte) nunca é copiado como asset.
+- Outro `.mdx`/`.tsx` que porventura esteja na mesma pasta não é asset — continua seguindo o
+  pipeline normal de compilação (vira sua própria skill/rule/block, ou vira componente customizado
+  global, conforme a extensão).
+- Um arquivo chamado `SKILL.md` (sem `x`) na mesma pasta faz o build falhar, por colidir com o
+  `SKILL.md` gerado a partir do `SKILL.mdx`.
+
+Cada `pochete build` apaga `.claude/skills/user__<nome>/` inteira antes de regerar — um arquivo
+removido de `domain/<nome>/` some do destino no rebuild seguinte, em vez de ficar órfão.
+
+`<Rule>`/`<Block>` continuam no formato antigo (`domain/<nome>.mdx`, arquivo solto, sem pasta) —
+não empacotam assets, porque o destino deles é um único arquivo. Uma pasta de mesmo nome ao lado
+de um `<Rule>`/`<Block>` é só um aviso no console, nunca copiada.
+
+`pochete build` também valida o nome do arquivo: um `.mdx` chamado `SKILL.mdx` que não usa
+`<Skill>` como raiz, ou um `<Skill>` que não vive num arquivo chamado `SKILL.mdx`, faz o build
+falhar com erro — o nome do arquivo e o componente usado precisam sempre bater.
