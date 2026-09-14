@@ -38,14 +38,16 @@ export function registerSafeCurlTool(server: McpServer): void {
       description:
         'Parses a pasted curl command (method, URL, headers, body — no real shell, no real ' +
         "curl binary involved) and executes it, injecting an auth header from this server's " +
-        "own .env — Cookie by default, or the header configured on the given authProfile (see " +
-        "headerName in auth-profiles.json, e.g. X-API-Key) — using the env var registered for " +
-        'that profile. The curl must not itself set a Cookie, Authorization, or (when the ' +
-        'profile uses a different header) that header either — rejected mechanically, not just ' +
-        'by convention, so the real credential value never has to appear as a tool argument or ' +
-        'in chat. Response headers that could carry a credential back (set-cookie, ' +
-        'www-authenticate, proxy-authenticate, or any header name containing "auth"/"token") ' +
-        'are redacted before being returned or written to disk.',
+        "own .env — Cookie by default, a custom header configured on the given authProfile " +
+        "(see headerName in auth-profiles.json, e.g. X-API-Key), or HTTP Basic auth built " +
+        "server-side from a user/password env-var pair (see type: 'basic' in " +
+        'auth-profiles.json) — using the env var(s) registered for that profile. The curl must ' +
+        'not itself set a Cookie, Authorization, or (when the profile uses a different header) ' +
+        'that header either — rejected mechanically, not just by convention, so the real ' +
+        'credential value never has to appear as a tool argument or in chat. Response headers ' +
+        'that could carry a credential back (set-cookie, www-authenticate, proxy-authenticate, ' +
+        'or any header name containing "auth"/"token") are redacted before being returned or ' +
+        'written to disk.',
       inputSchema: INPUT_SHAPE,
     },
     async (input) => {
