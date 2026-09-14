@@ -39,6 +39,12 @@ let cleanupRegistryFile: (() => Promise<void>) | undefined;
 beforeAll(async () => {
   const { path: registryFilePath, cleanup } = await writeTempJsonFile('auth-profiles.json', {
     'example-profile': { envVar: 'SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE' },
+    'example-basic-profile': {
+      type: 'basic',
+      userEnvVar: 'SAFE_CURL_EXAMPLE_BASIC_PROFILE_USER',
+      // eslint-disable-next-line sonarjs/no-hardcoded-passwords -- env var *name*, not a real credential value
+      passwordEnvVar: 'SAFE_CURL_EXAMPLE_BASIC_PROFILE_PASSWORD',
+    },
   });
   cleanupRegistryFile = cleanup;
   process.env[REGISTRY_FILE_VAR] = registryFilePath;
@@ -72,6 +78,10 @@ describe('resolveAuthHeaderName', () => {
   it('defaults to "Cookie" for a profile with no headerName (e.g. "example-profile")', () => {
     expect(resolveAuthHeaderName('example-profile')).toBe('Cookie');
   });
+
+  it('is always "Authorization" for a "basic"-type profile', () => {
+    expect(resolveAuthHeaderName('example-basic-profile')).toBe('Authorization');
+  });
 });
 
 describe('resolveAuthCredential', () => {
@@ -89,5 +99,31 @@ describe('resolveAuthCredential', () => {
   it('throws, naming the env var and profile, when the env var is empty', async () => {
     const env = await envConfigWith({ SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE: '' });
     expect(() => resolveAuthCredential('example-profile', env)).toThrow(/SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE/);
+  });
+
+  it('base64-encodes the "basic"-type profile\'s user/password pair into a Basic credential', async () => {
+    const env = await envConfigWith({
+      SAFE_CURL_EXAMPLE_BASIC_PROFILE_USER: 'alice',
+      SAFE_CURL_EXAMPLE_BASIC_PROFILE_PASSWORD: 'secret',
+    });
+    const expected = `Basic ${Buffer.from('alice:secret').toString('base64')}`;
+    expect(resolveAuthCredential('example-basic-profile', env)).toBe(expected);
+  });
+
+  it('throws, naming the user env var and profile, when only the password env var is set', async () => {
+    const env = await envConfigWith({ SAFE_CURL_EXAMPLE_BASIC_PROFILE_PASSWORD: 'secret' });
+    expect(() => resolveAuthCredential('example-basic-profile', env)).toThrow(
+      /SAFE_CURL_EXAMPLE_BASIC_PROFILE_USER/,
+    );
+    expect(() => resolveAuthCredential('example-basic-profile', env)).toThrow(
+      /authProfile "example-basic-profile"/,
+    );
+  });
+
+  it('throws, naming the password env var and profile, when only the user env var is set', async () => {
+    const env = await envConfigWith({ SAFE_CURL_EXAMPLE_BASIC_PROFILE_USER: 'alice' });
+    expect(() => resolveAuthCredential('example-basic-profile', env)).toThrow(
+      /SAFE_CURL_EXAMPLE_BASIC_PROFILE_PASSWORD/,
+    );
   });
 });

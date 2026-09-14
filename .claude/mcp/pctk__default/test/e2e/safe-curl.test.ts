@@ -29,6 +29,12 @@ const SET_COOKIE_URL = 'https://example.test/set-cookie';
 // same shape as the real, gitignored auth-profiles.json (see auth-profiles.example.json).
 const FAKE_AUTH_PROFILES = {
   'example-profile': { envVar: 'SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE' },
+  'example-basic-profile': {
+    type: 'basic',
+    userEnvVar: 'SAFE_CURL_EXAMPLE_BASIC_PROFILE_USER',
+    // eslint-disable-next-line sonarjs/no-hardcoded-passwords -- env var *name*, not a real credential value
+    passwordEnvVar: 'SAFE_CURL_EXAMPLE_BASIC_PROFILE_PASSWORD',
+  },
 };
 
 interface CallResult {
@@ -129,6 +135,31 @@ describe('safe-curl (via call-tool.mjs against the real MCP server)', () => {
     );
     expect(exitCode).toBe(1);
     expect(stderr).toContain('Authorization');
+  });
+
+  it('injects Basic auth built from the "example-basic-profile" user/password pair', async () => {
+    const { stdout, exitCode } = await callSafeCurl(
+      { curl: `curl '${ECHO_URL}'`, authProfile: 'example-basic-profile' },
+      {
+        SAFE_CURL_EXAMPLE_BASIC_PROFILE_USER: 'alice',
+        SAFE_CURL_EXAMPLE_BASIC_PROFILE_PASSWORD: 'secret',
+      },
+    );
+    expect(exitCode).toBe(0);
+    const payload = JSON.parse(stdout);
+    const body = JSON.parse(payload.body);
+    const expected = `Basic ${Buffer.from('alice:secret').toString('base64')}`;
+    expect(body.headers.authorization).toBe(expected);
+  });
+
+  it('rejects when the "example-basic-profile" password env var is not set, naming it and the profile', async () => {
+    const { stderr, exitCode } = await callSafeCurl(
+      { curl: `curl '${ECHO_URL}'`, authProfile: 'example-basic-profile' },
+      { SAFE_CURL_EXAMPLE_BASIC_PROFILE_USER: 'alice', SAFE_CURL_EXAMPLE_BASIC_PROFILE_PASSWORD: '' },
+    );
+    expect(exitCode).toBe(1);
+    expect(stderr).toContain('SAFE_CURL_EXAMPLE_BASIC_PROFILE_PASSWORD');
+    expect(stderr).toContain('authProfile "example-basic-profile"');
   });
 
   it('rejects when the "example-profile" authProfile env var is not set, naming it and the profile', async () => {

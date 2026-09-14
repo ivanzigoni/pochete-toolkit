@@ -1,5 +1,10 @@
 {
   "example-profile": {
     "envVar": "SAFE_CURL_EXAMPLE_PROFILE_AUTH_COOKIE"
+  },
+  "example-basic-profile": {
+    "type": "basic",
+    "userEnvVar": "SAFE_CURL_EXAMPLE_BASIC_PROFILE_USER",
+    "passwordEnvVar": "SAFE_CURL_EXAMPLE_BASIC_PROFILE_PASSWORD"
   }
 }
