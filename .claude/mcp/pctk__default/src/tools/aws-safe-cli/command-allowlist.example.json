@@ -1,0 +1,7 @@
+{
+  "sts get-caller-identity": {
+    "verbRule": {
+      "bareAllowed": true
+    }
+  }
+}

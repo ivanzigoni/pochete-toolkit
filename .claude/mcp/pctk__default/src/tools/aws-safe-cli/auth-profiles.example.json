@@ -1,0 +1,7 @@
+{
+  "example-account": {
+    "accessKeyIdEnvVar": "AWS_SAFE_CLI_EXAMPLE_ACCOUNT_ACCESS_KEY_ID",
+    "secretAccessKeyEnvVar": "AWS_SAFE_CLI_EXAMPLE_ACCOUNT_SECRET_ACCESS_KEY",
+    "region": "us-east-1"
+  }
+}

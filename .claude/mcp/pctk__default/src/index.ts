@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
+import { registerAwsCliTool } from './tools/aws-safe-cli/register.js';
 import { registerBitbucketOpenPrTool } from './tools/bitbucket-open-pr/register.js';
 import { registerDelegateReasoningTool } from './tools/delegate-reasoning/register.js';
 import { registerJiraAddCommentTool } from './tools/jira-add-comment/register.js';
@@ -31,6 +32,7 @@ const REGISTRARS: readonly (readonly [string, (server: McpServer) => void])[] = 
   ['jira-search-issues', registerJiraSearchIssuesTool],
   ['jira-create-issue', registerJiraCreateIssueTool],
   ['railway-safe-cli', registerRailwayCliTool],
+  ['aws-safe-cli', registerAwsCliTool],
 ];
 
 // One tool failing to register (e.g. an unexpected error building its input schema) must never
