@@ -96,6 +96,23 @@ describe('runRailwayCommand', () => {
     ]);
   });
 
+  it('does not append --project/--environment/--service for config', async () => {
+    const binaryPath = await writeEchoFixture();
+    const result = await runRailwayCommand({
+      binaryPath,
+      command: 'config',
+      args: ['pull', '--json'],
+      projectId: 'project-1',
+      environmentId: 'environment-1',
+      serviceId: 'service-1',
+      token: 'test-token',
+      timeoutMs: undefined,
+    });
+    const parsed = JSON.parse(result.stdout) as { argv: string[]; RAILWAY_TOKEN: string };
+    expect(parsed.argv).toEqual(['config', 'pull', '--json']);
+    expect(parsed.RAILWAY_TOKEN).toBe('test-token');
+  });
+
   it('injects the token into the child env as RAILWAY_TOKEN, never in argv', async () => {
     const binaryPath = await writeEchoFixture();
     const result = await runRailwayCommand({
