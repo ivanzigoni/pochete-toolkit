@@ -5,8 +5,9 @@
  * never appended to argv, so it never appears in `ps`/`/proc/<pid>/cmdline` for another local user
  * to read. project/environment/service are appended from the caller's resolved auth profile, not
  * from `args` — validate.ts's assertNoScopeOverride already rejects an attempt to set them from
- * args before this function ever runs. `config` is the exception: the CLI rejects those flags on
- * that subcommand, so its scope comes only from the project token (see exec.test.ts).
+ * args before this function ever runs. `config` and `help` are the exceptions: the CLI rejects
+ * those flags on both subcommands, so their scope comes only from the project token (see
+ * exec.test.ts).
  */
 import { execFile, type ExecFileException } from 'node:child_process';
 
@@ -29,7 +30,7 @@ export interface RunRailwayCommandParams {
 }
 
 function buildArgv(params: RunRailwayCommandParams): string[] {
-  if (params.command === 'config') {
+  if (params.command === 'config' || params.command === 'help') {
     return [params.command, ...params.args];
   }
   const argv = [

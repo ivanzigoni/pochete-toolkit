@@ -113,6 +113,23 @@ describe('runRailwayCommand', () => {
     expect(parsed.RAILWAY_TOKEN).toBe('test-token');
   });
 
+  it('does not append --project/--environment/--service for help', async () => {
+    const binaryPath = await writeEchoFixture();
+    const result = await runRailwayCommand({
+      binaryPath,
+      command: 'help',
+      args: [],
+      projectId: 'project-1',
+      environmentId: 'environment-1',
+      serviceId: 'service-1',
+      token: 'test-token',
+      timeoutMs: undefined,
+    });
+    const parsed = JSON.parse(result.stdout) as { argv: string[]; RAILWAY_TOKEN: string };
+    expect(parsed.argv).toEqual(['help']);
+    expect(parsed.RAILWAY_TOKEN).toBe('test-token');
+  });
+
   it('injects the token into the child env as RAILWAY_TOKEN, never in argv', async () => {
     const binaryPath = await writeEchoFixture();
     const result = await runRailwayCommand({
