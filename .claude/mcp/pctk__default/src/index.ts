@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 
 import { registerAwsCliTool } from './tools/aws-safe-cli/register.js';
+import { registerBitbucketDeployLogsTool } from './tools/bitbucket-deploy-logs/register.js';
 import { registerBitbucketOpenPrTool } from './tools/bitbucket-open-pr/register.js';
 import { registerDelegateReasoningTool } from './tools/delegate-reasoning/register.js';
 import { registerJiraAddCommentTool } from './tools/jira-add-comment/register.js';
@@ -25,6 +26,7 @@ const REGISTRARS: readonly (readonly [string, (server: McpServer) => void])[] = 
   ['safe-query', registerSafeQueryTool],
   ['safe-curl', registerSafeCurlTool],
   ['bitbucket-open-pr', registerBitbucketOpenPrTool],
+  ['bitbucket-deploy-logs', registerBitbucketDeployLogsTool],
   ['portainer-get-container-logs', registerPortainerGetContainerLogsTool],
   ['delegate-reasoning', registerDelegateReasoningTool],
   ['jira-get-issue', registerJiraGetIssueTool],

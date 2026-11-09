@@ -1,0 +1,6 @@
+{
+  "example-profile": {
+    "emailEnvVar": "DEPLOY_LOGS_EXAMPLE_PROFILE_EMAIL",
+    "apiTokenEnvVar": "DEPLOY_LOGS_EXAMPLE_PROFILE_API_TOKEN"
+  }
+}

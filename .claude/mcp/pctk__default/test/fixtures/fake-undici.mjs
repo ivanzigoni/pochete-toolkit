@@ -1,6 +1,7 @@
 // Fake replacement for the `undici` package's `fetch` export, swapped in for the e2e suite by
 // fake-driver-loader.mjs. Mimics only the surface src/tools/safe-curl/http.ts,
-// src/tools/bitbucket-open-pr/http.ts, and src/tools/portainer-get-container-logs/docker-client.ts
+// src/tools/bitbucket-open-pr/http.ts, src/tools/bitbucket-deploy-logs/http.ts, and
+// src/tools/portainer-get-container-logs/docker-client.ts
 // actually call (`fetch(url, { method, headers, body })` -> `{ status, statusText, headers.forEach,
 // text(), json(), arrayBuffer() }`) against a handful of canned endpoints/paths — no real network
 // call is made. Echoing back the method, the Cookie header it actually received (plus a
@@ -11,7 +12,11 @@
 // tool's result is inlined or written to disk. The Bitbucket pullrequests endpoint below returns
 // 401 if no "Basic " Authorization header is present at all (proving the header actually reached
 // the request — its exact value is a unit concern, covered by request.test.ts), then branches on
-// repoSlug to simulate a success/failure response without a real Bitbucket account. The Portainer
+// repoSlug to simulate a success/failure response without a real Bitbucket account. The Bitbucket
+// pipelines/steps/log endpoints (bitbucket-deploy-logs) branch on commit hash the same way: one
+// commit resolves a two-page steps listing (exercising the `next` pagination follow), another
+// resolves no pipeline at all, and a third resolves a pipeline whose one step's log fetch 404s.
+// The Portainer
 // endpoints gate on a fixed X-API-Key value the same way, and the logs endpoint returns a real
 // Docker-framed byte body (via arrayBuffer(), never valid UTF-8 text) so the e2e suite exercises
 // the same raw-byte demuxing path production traffic does. The Jira endpoints (JIRA_FAKE_SITE)
@@ -21,6 +26,13 @@
 const ECHO_URL = 'https://example.test/echo';
 const SET_COOKIE_URL = 'https://example.test/set-cookie';
 const BITBUCKET_API_ROOT = 'https://api.bitbucket.org/2.0/repositories/';
+
+// Fixture-only commit hashes for bitbucket-deploy-logs — never a real Bitbucket commit.
+export const DEPLOY_LOGS_VALID_COMMIT = 'deadbeefcafe1234567890abcdef1234567890';
+export const DEPLOY_LOGS_NO_PIPELINE_COMMIT = 'no-pipeline-commit';
+export const DEPLOY_LOGS_LOG_FAILURE_COMMIT = 'log-failure-commit';
+export const DEPLOY_LOGS_PIPELINE_UUID = '{fake-pipeline-uuid}';
+export const DEPLOY_LOGS_LOG_FAILURE_PIPELINE_UUID = '{fake-log-failure-pipeline-uuid}';
 const DEEPSEEK_CHAT_COMPLETIONS_URL = 'https://api.deepseek.com/chat/completions';
 
 // Fixture-only Jira Cloud site, mirrored as a local constant (same name) in each of
@@ -166,6 +178,115 @@ export async function fetch(url, init = {}) {
       },
       JSON.stringify({ ok: true }),
     );
+  }
+
+  if (typeof url === 'string' && url.startsWith(BITBUCKET_API_ROOT) && url.includes('/pipelines')) {
+    const headers = init.headers ?? {};
+    const authorization = headers.Authorization ?? headers.authorization ?? null;
+
+    if (!authorization || !authorization.startsWith('Basic ')) {
+      return fakeResponse(
+        401,
+        'Unauthorized',
+        { 'content-type': 'application/json' },
+        JSON.stringify({ type: 'error', error: { message: 'no valid Basic auth header' } }),
+      );
+    }
+
+    const parsedUrl = new URL(url);
+
+    const stepLogMatch = parsedUrl.pathname.match(/\/pipelines\/[^/]+\/steps\/([^/]+)\/log$/);
+    if (stepLogMatch) {
+      const [, stepUuid] = stepLogMatch.map(decodeURIComponent);
+      if (stepUuid === 'step-failing-log') {
+        return fakeResponse(404, 'Not Found', { 'content-type': 'application/json' }, JSON.stringify({}));
+      }
+      if (stepUuid === 'step-build') {
+        return fakeResponse(200, 'OK', { 'content-type': 'text/plain' }, 'building...\n');
+      }
+      if (stepUuid === 'step-deploy') {
+        return fakeResponse(200, 'OK', { 'content-type': 'text/plain' }, 'deploying...\n');
+      }
+      return fakeResponse(404, 'Not Found', { 'content-type': 'application/json' }, JSON.stringify({}));
+    }
+
+    const stepsMatch = parsedUrl.pathname.match(/\/pipelines\/([^/]+)\/steps\/$/);
+    if (stepsMatch) {
+      const [, pipelineUuid] = stepsMatch.map(decodeURIComponent);
+
+      if (pipelineUuid === DEPLOY_LOGS_LOG_FAILURE_PIPELINE_UUID) {
+        return fakeResponse(
+          200,
+          'OK',
+          { 'content-type': 'application/json' },
+          JSON.stringify({
+            values: [{ uuid: 'step-failing-log', name: 'Deploy', state: { name: 'COMPLETED', result: { name: 'FAILED' } } }],
+          }),
+        );
+      }
+
+      if (pipelineUuid === DEPLOY_LOGS_PIPELINE_UUID) {
+        if (parsedUrl.searchParams.get('page') === '2') {
+          return fakeResponse(
+            200,
+            'OK',
+            { 'content-type': 'application/json' },
+            JSON.stringify({
+              values: [
+                { uuid: 'step-deploy', name: 'Deploy', state: { name: 'COMPLETED', result: { name: 'SUCCESSFUL' } } },
+              ],
+            }),
+          );
+        }
+        return fakeResponse(
+          200,
+          'OK',
+          { 'content-type': 'application/json' },
+          JSON.stringify({
+            values: [
+              { uuid: 'step-build', name: 'Build', state: { name: 'COMPLETED', result: { name: 'SUCCESSFUL' } } },
+            ],
+            next: `${url.split('?')[0]}?page=2`,
+          }),
+        );
+      }
+
+      return fakeResponse(404, 'Not Found', { 'content-type': 'application/json' }, JSON.stringify({}));
+    }
+
+    if (parsedUrl.pathname.endsWith('/pipelines/')) {
+      const q = parsedUrl.searchParams.get('q') ?? '';
+      const commitMatch = q.match(/^target\.commit\.hash="(.*)"$/);
+      const commitHash = commitMatch ? commitMatch[1] : undefined;
+
+      if (commitHash === DEPLOY_LOGS_VALID_COMMIT) {
+        return fakeResponse(
+          200,
+          'OK',
+          { 'content-type': 'application/json' },
+          JSON.stringify({
+            values: [{ uuid: DEPLOY_LOGS_PIPELINE_UUID, build_number: 7, state: { name: 'COMPLETED' } }],
+          }),
+        );
+      }
+
+      if (commitHash === DEPLOY_LOGS_LOG_FAILURE_COMMIT) {
+        return fakeResponse(
+          200,
+          'OK',
+          { 'content-type': 'application/json' },
+          JSON.stringify({
+            values: [
+              { uuid: DEPLOY_LOGS_LOG_FAILURE_PIPELINE_UUID, build_number: 9, state: { name: 'COMPLETED' } },
+            ],
+          }),
+        );
+      }
+
+      return fakeResponse(200, 'OK', { 'content-type': 'application/json' }, JSON.stringify({ values: [] }));
+    }
+
+    return fakeResponse(404, 'Not Found', { 'content-type': 'application/json' }, JSON.stringify({}));
   }
 
   if (typeof url === 'string' && url.startsWith(BITBUCKET_API_ROOT)) {

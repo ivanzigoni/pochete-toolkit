@@ -31,6 +31,7 @@ pnpm-debug.log*
 # local only, the committed counterpart is its *.example.json sibling.
 src/tools/safe-curl/auth-profiles.json
 src/tools/bitbucket-open-pr/auth-profiles.json
+src/tools/bitbucket-deploy-logs/auth-profiles.json
 src/tools/safe-query/config.json
 src/tools/portainer-get-container-logs/config.json
 src/tools/jira-get-issue/auth-profiles.json
