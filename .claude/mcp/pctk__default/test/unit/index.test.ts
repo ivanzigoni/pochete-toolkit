@@ -8,6 +8,7 @@ const {
   registerSafeCurlMock,
   registerBitbucketOpenPrMock,
   registerPortainerGetContainerLogsMock,
+  registerPortainerGetContainerStatsMock,
   registerDelegateReasoningMock,
   registerJiraGetIssueMock,
   registerJiraAddCommentMock,
@@ -21,6 +22,7 @@ const {
   registerSafeCurlMock: vi.fn(),
   registerBitbucketOpenPrMock: vi.fn(),
   registerPortainerGetContainerLogsMock: vi.fn(),
+  registerPortainerGetContainerStatsMock: vi.fn(),
   registerDelegateReasoningMock: vi.fn(),
   registerJiraGetIssueMock: vi.fn(),
   registerJiraAddCommentMock: vi.fn(),
@@ -61,6 +63,9 @@ vi.mock('../../src/tools/bitbucket-open-pr/register.js', () => ({
 vi.mock('../../src/tools/portainer-get-container-logs/register.js', () => ({
   registerPortainerGetContainerLogsTool: registerPortainerGetContainerLogsMock,
 }));
+vi.mock('../../src/tools/portainer-get-container-stats/register.js', () => ({
+  registerPortainerGetContainerStatsTool: registerPortainerGetContainerStatsMock,
+}));
 vi.mock('../../src/tools/delegate-reasoning/register.js', () => ({
   registerDelegateReasoningTool: registerDelegateReasoningMock,
 }));
@@ -92,11 +97,12 @@ describe('src/index.ts bootstrap', () => {
     });
   });
 
-  it('registers all 9 tools against the same server instance', () => {
+  it('registers all 10 mocked tools against the same server instance', () => {
     expect(registerSafeQueryMock).toHaveBeenCalledTimes(1);
     expect(registerSafeCurlMock).toHaveBeenCalledTimes(1);
     expect(registerBitbucketOpenPrMock).toHaveBeenCalledTimes(1);
     expect(registerPortainerGetContainerLogsMock).toHaveBeenCalledTimes(1);
+    expect(registerPortainerGetContainerStatsMock).toHaveBeenCalledTimes(1);
     expect(registerDelegateReasoningMock).toHaveBeenCalledTimes(1);
     expect(registerJiraGetIssueMock).toHaveBeenCalledTimes(1);
     expect(registerJiraAddCommentMock).toHaveBeenCalledTimes(1);
@@ -106,6 +112,7 @@ describe('src/index.ts bootstrap', () => {
     expect(registerSafeCurlMock).toHaveBeenCalledWith(constructedServer);
     expect(registerBitbucketOpenPrMock).toHaveBeenCalledWith(constructedServer);
     expect(registerPortainerGetContainerLogsMock).toHaveBeenCalledWith(constructedServer);
+    expect(registerPortainerGetContainerStatsMock).toHaveBeenCalledWith(constructedServer);
     expect(registerDelegateReasoningMock).toHaveBeenCalledWith(constructedServer);
     expect(registerJiraGetIssueMock).toHaveBeenCalledWith(constructedServer);
     expect(registerJiraAddCommentMock).toHaveBeenCalledWith(constructedServer);

@@ -104,6 +104,262 @@ function findPortainerEnvironment(url) {
   return PORTAINER_ENVIRONMENTS.find((env) => url.startsWith(env.root));
 }
 
+export const PORTAINER_PRD_EXITED_CONTAINER_ID =
+  'e7175edc0ffee0ddba11e7175edc0ffee0ddba11e7175edc0ffee0ddba11e717';
+export const PORTAINER_PRD_TASKS_DENIED_CONTAINER_ID =
+  'd3d1edd3d1edd3d1edd3d1edd3d1edd3d1edd3d1edd3d1edd3d1edd3d1edd3d1';
+
+const HML_ROOT = portainerApiRoot(PORTAINER_HML_HOST, PORTAINER_ENDPOINT_ID);
+const PRD_ROOT = portainerApiRoot(PORTAINER_PRD_HOST, PORTAINER_ENDPOINT_ID);
+
+const PORTAINER_STATS_FIXTURES = {
+  [HML_ROOT]: {
+    extraRunningContainers: [],
+    stoppedContainers: [],
+    statsById: {
+      [PORTAINER_FAKE_CONTAINER_ID]: {
+        read: '2026-11-26T10:00:00.000000000Z',
+        cpu_stats: {
+          cpu_usage: { total_usage: 2_000_000_000 },
+          system_cpu_usage: 20_000_000_000,
+          online_cpus: 4,
+          throttling_data: { periods: 100, throttled_periods: 12, throttled_time: 345000 },
+        },
+        precpu_stats: {
+          cpu_usage: { total_usage: 1_000_000_000 },
+          system_cpu_usage: 10_000_000_000,
+          online_cpus: 4,
+        },
+        memory_stats: {
+          usage: 600,
+          limit: 1000,
+          stats: { inactive_file: 100, anon: 450 },
+        },
+        networks: {
+          eth0: {
+            rx_bytes: 10,
+            tx_bytes: 20,
+            rx_errors: 0,
+            tx_errors: 0,
+            rx_dropped: 0,
+            tx_dropped: 0,
+          },
+        },
+        blkio_stats: {
+          io_service_bytes_recursive: [
+            { major: 8, minor: 0, op: 'read', value: 100 },
+            { major: 8, minor: 0, op: 'write', value: 50 },
+          ],
+        },
+        pids_stats: { current: 42, limit: 512 },
+      },
+    },
+    inspectById: {
+      [PORTAINER_FAKE_CONTAINER_ID]: {
+        Id: PORTAINER_FAKE_CONTAINER_ID,
+        Image: 'sha256:hml',
+        RestartCount: 0,
+        Config: { Image: 'example/svc-a:hml' },
+        State: {
+          Status: 'running',
+          OOMKilled: false,
+          ExitCode: 0,
+          Error: '',
+          StartedAt: '2026-11-26T09:00:00Z',
+          FinishedAt: '0001-01-01T00:00:00Z',
+          Health: { Status: 'healthy', FailingStreak: 0, Log: [] },
+        },
+        HostConfig: { Memory: 1000, NanoCpus: 1_000_000_000 },
+      },
+    },
+    tasksByService: {
+      [`${PORTAINER_HML_STACK_NAMESPACE}_svc-a`]: [
+        {
+          ID: 'hml-task-current',
+          CreatedAt: '2026-11-26T09:00:00Z',
+          UpdatedAt: '2026-11-26T09:00:05Z',
+          DesiredState: 'running',
+          Status: {
+            State: 'running',
+            Message: 'started',
+            ContainerStatus: { ContainerID: PORTAINER_FAKE_CONTAINER_ID, ExitCode: 0 },
+          },
+        },
+      ],
+    },
+    tasksDeniedServices: [],
+  },
+  [PRD_ROOT]: {
+    extraRunningContainers: [
+      {
+        Id: PORTAINER_PRD_TASKS_DENIED_CONTAINER_ID,
+        State: 'running',
+        Created: 3000,
+        Labels: {
+          'com.docker.swarm.service.name': `${PORTAINER_PRD_STACK_NAMESPACE}_svc-tasks-denied`,
+        },
+      },
+    ],
+    stoppedContainers: [
+      {
+        Id: PORTAINER_PRD_EXITED_CONTAINER_ID,
+        State: 'exited',
+        Created: 1000,
+        Labels: { 'com.docker.swarm.service.name': `${PORTAINER_PRD_STACK_NAMESPACE}_svc-a` },
+      },
+    ],
+    statsById: {
+      [PORTAINER_PRD_FAKE_CONTAINER_ID]: {
+        read: '2026-11-26T11:00:00.000000000Z',
+        cpu_stats: {
+          cpu_usage: { total_usage: 3_000_000_000, percpu_usage: [1, 1] },
+          system_cpu_usage: 30_000_000_000,
+        },
+        precpu_stats: {
+          cpu_usage: { total_usage: 1_000_000_000, percpu_usage: [1, 1] },
+          system_cpu_usage: 10_000_000_000,
+        },
+        memory_stats: {
+          usage: 800,
+          max_usage: 900,
+          limit: 2000,
+          stats: { total_inactive_file: 300, cache: 350, inactive_file: 300 },
+        },
+        networks: null,
+        blkio_stats: {
+          io_service_bytes_recursive: [
+            { major: 8, minor: 0, op: 'Read', value: 7 },
+            { major: 8, minor: 0, op: 'Write', value: 3 },
+            { major: 8, minor: 0, op: 'Total', value: 10 },
+          ],
+        },
+        pids_stats: { current: 10 },
+      },
+      [PORTAINER_PRD_TASKS_DENIED_CONTAINER_ID]: {
+        read: '2026-11-26T11:00:00.000000000Z',
+        memory_stats: { usage: 10, limit: 100 },
+      },
+    },
+    inspectById: {
+      [PORTAINER_PRD_FAKE_CONTAINER_ID]: {
+        Id: PORTAINER_PRD_FAKE_CONTAINER_ID,
+        Image: 'sha256:prd',
+        RestartCount: 0,
+        Config: { Image: 'example/svc-a:prd' },
+        State: { Status: 'running', OOMKilled: false, ExitCode: 0, Error: '' },
+        HostConfig: { Memory: 2000, NanoCpus: 0 },
+      },
+      [PORTAINER_PRD_EXITED_CONTAINER_ID]: {
+        Id: PORTAINER_PRD_EXITED_CONTAINER_ID,
+        Image: 'sha256:prd',
+        RestartCount: 0,
+        Config: { Image: 'example/svc-a:prd' },
+        State: {
+          Status: 'exited',
+          OOMKilled: true,
+          ExitCode: 137,
+          Error: '',
+          StartedAt: '2026-11-26T08:00:00Z',
+          FinishedAt: '2026-11-26T09:30:00Z',
+        },
+        HostConfig: { Memory: 2000, NanoCpus: 0 },
+      },
+      [PORTAINER_PRD_TASKS_DENIED_CONTAINER_ID]: {
+        Id: PORTAINER_PRD_TASKS_DENIED_CONTAINER_ID,
+        State: { Status: 'running' },
+      },
+    },
+    tasksByService: {
+      [`${PORTAINER_PRD_STACK_NAMESPACE}_svc-a`]: [
+        {
+          ID: 'prd-task-crashed',
+          CreatedAt: '2026-11-26T08:00:00Z',
+          UpdatedAt: '2026-11-26T09:30:00Z',
+          DesiredState: 'shutdown',
+          Status: {
+            State: 'failed',
+            Message: 'started',
+            Err: 'task: non-zero exit (137)',
+            ContainerStatus: { ContainerID: PORTAINER_PRD_EXITED_CONTAINER_ID, ExitCode: 137 },
+          },
+        },
+        {
+          ID: 'prd-task-current',
+          CreatedAt: '2026-11-26T09:30:01Z',
+          UpdatedAt: '2026-11-26T09:30:10Z',
+          DesiredState: 'running',
+          Status: {
+            State: 'running',
+            Message: 'started',
+            ContainerStatus: { ContainerID: PORTAINER_PRD_FAKE_CONTAINER_ID, ExitCode: 0 },
+          },
+        },
+      ],
+    },
+    tasksDeniedServices: [`${PORTAINER_PRD_STACK_NAMESPACE}_svc-tasks-denied`],
+  },
+};
+
+function jsonResponse(status, statusText, body) {
+  return fakeResponse(
+    status,
+    statusText,
+    { 'content-type': 'application/json' },
+    JSON.stringify(body),
+  );
+}
+
+function handlePortainerStatsRoutes(portainerEnv, url) {
+  const fixture = PORTAINER_STATS_FIXTURES[portainerEnv.root];
+  if (!fixture) return undefined;
+  const parsed = new URL(url);
+  const relativePath = parsed.pathname.slice(new URL(portainerEnv.root).pathname.length);
+
+  if (relativePath === '/containers/json') {
+    const running = [
+      ...portainerEnv.containers.map((container) => ({
+        State: 'running',
+        Created: 2000,
+        ...container,
+      })),
+      ...fixture.extraRunningContainers,
+    ];
+    const includeStopped = parsed.searchParams.get('all') === 'true';
+    return jsonResponse(
+      200,
+      'OK',
+      includeStopped ? [...running, ...fixture.stoppedContainers] : running,
+    );
+  }
+
+  const statsMatch = relativePath.match(/^\/containers\/([^/]+)\/stats$/);
+  if (statsMatch) {
+    const stats = fixture.statsById[decodeURIComponent(statsMatch[1])];
+    if (!stats || parsed.searchParams.get('stream') !== 'false') {
+      return jsonResponse(404, 'Not Found', { message: 'no such container' });
+    }
+    return jsonResponse(200, 'OK', stats);
+  }
+
+  const inspectMatch = relativePath.match(/^\/containers\/([^/]+)\/json$/);
+  if (inspectMatch) {
+    const inspect = fixture.inspectById[decodeURIComponent(inspectMatch[1])];
+    if (!inspect) return jsonResponse(404, 'Not Found', { message: 'no such container' });
+    return jsonResponse(200, 'OK', inspect);
+  }
+
+  if (relativePath === '/tasks') {
+    const filters = JSON.parse(parsed.searchParams.get('filters') ?? '{}');
+    const [serviceName] = filters.service ?? [];
+    if (fixture.tasksDeniedServices.includes(serviceName)) {
+      return jsonResponse(403, 'Forbidden', { message: 'access denied to resource' });
+    }
+    return jsonResponse(200, 'OK', fixture.tasksByService[serviceName] ?? []);
+  }
+
+  return undefined;
+}
+
 function toBuffer(body) {
   return Buffer.isBuffer(body) ? body : Buffer.from(body, 'utf-8');
 }
@@ -570,6 +826,9 @@ export async function fetch(url, init = {}) {
         JSON.stringify({ message: 'invalid api key' }),
       );
     }
+
+    const statsRouteResponse = handlePortainerStatsRoutes(portainerEnv, url);
+    if (statsRouteResponse) return statsRouteResponse;
 
     if (url === `${portainerEnv.root}/containers/json`) {
       return fakeResponse(

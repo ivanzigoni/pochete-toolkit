@@ -79,6 +79,7 @@ flowchart LR
 | `jira-get-issue` | Lê os dados de um issue no Jira Cloud. |
 | `jira-search-issues` | Busca issues no Jira Cloud a partir de uma consulta JQL. |
 | `portainer-get-container-logs` | Obtém logs em tempo real de containers de serviços no Portainer, para diagnóstico de problemas em produção e testes E2E. |
+| `portainer-get-container-stats` | Obtém um snapshot de consumo de CPU, memória, rede, disco e PIDs de um container de serviço no Portainer, junto com estado (OOM kill, exit code, healthcheck) e histórico recente de tasks Swarm. |
 | `railway-safe-cli` | Executa comandos allowlisted da Railway CLI, localmente instalada, injetando token e projeto/ambiente sem exigir `railway login`. |
 | `safe-curl` | Executa requisições curl autenticadas. |
 | `safe-query` | Executa consultas SQL somente leitura, com uma camada de redação de dados sensíveis conforme a LGPD. |

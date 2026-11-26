@@ -10,6 +10,7 @@ import { registerJiraCreateIssueTool } from './tools/jira-create-issue/register.
 import { registerJiraGetIssueTool } from './tools/jira-get-issue/register.js';
 import { registerJiraSearchIssuesTool } from './tools/jira-search-issues/register.js';
 import { registerPortainerGetContainerLogsTool } from './tools/portainer-get-container-logs/register.js';
+import { registerPortainerGetContainerStatsTool } from './tools/portainer-get-container-stats/register.js';
 import { registerRailwayCliTool } from './tools/railway-safe-cli/register.js';
 import { registerSafeCurlTool } from './tools/safe-curl/register.js';
 import { registerSafeQueryTool } from './tools/safe-query/register.js';
@@ -28,6 +29,7 @@ const REGISTRARS: readonly (readonly [string, (server: McpServer) => void])[] = 
   ['bitbucket-open-pr', registerBitbucketOpenPrTool],
   ['bitbucket-deploy-logs', registerBitbucketDeployLogsTool],
   ['portainer-get-container-logs', registerPortainerGetContainerLogsTool],
+  ['portainer-get-container-stats', registerPortainerGetContainerStatsTool],
   ['delegate-reasoning', registerDelegateReasoningTool],
   ['jira-get-issue', registerJiraGetIssueTool],
   ['jira-add-comment', registerJiraAddCommentTool],
